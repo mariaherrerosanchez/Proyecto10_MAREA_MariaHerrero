@@ -83,6 +83,8 @@ MAREA/
     └── MASTER_SPEC.md  # Especificación maestra
 ```
 
+La convención de estructura, nombres y ramas se define en la sección 9.1 de la especificación maestra. Los directorios de aplicación se crearán únicamente al iniciar su implementación.
+
 ## Próximos pasos
 
 Definir los hitos de P0, crear la estructura técnica cuando corresponda y validar un flujo mínimo de generación local antes de ampliar proveedores o capacidades avanzadas.

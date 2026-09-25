@@ -109,6 +109,15 @@ Navegación prevista: Inicio, Crear, Radar, Biblioteca, Ciencia, Perfiles y Conf
 
 Esta fase solo cubre documentación y configuración inicial. No se crearán aún directorios `frontend/` o `backend/`, código de aplicación ni dependencias.
 
+### 9.1 Convención inicial de estructura y nombres
+
+- `frontend/` albergará la aplicación React + TypeScript cuando comience su implementación.
+- `backend/` albergará la API FastAPI y su código Python cuando comience su implementación.
+- `specs/` contiene las especificaciones y decisiones de producto y arquitectura.
+- `scripts/` contiene scripts auxiliares de automatización y mantenimiento del repositorio.
+- Los archivos y directorios usarán nombres descriptivos en minúsculas y `kebab-case`, salvo los nombres convencionales del ecosistema (por ejemplo, `README.md`, `.gitignore` o `MASTER_SPEC.md`).
+- Las ramas seguirán el patrón: `main` para versiones estables, `dev` para integración, `feature/<descripcion>` para funcionalidades, `fix/<descripcion>` para correcciones y `docs/<descripcion>` para documentación. Las descripciones usarán `kebab-case`.
+
 ## 10. Entregables del proyecto
 
 - Repositorio GitHub documentado.
