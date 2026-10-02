@@ -70,7 +70,7 @@ La prioridad es mantener un flujo completo utilizable sin servicios de pago, fav
 
 ## Estado actual
 
-**Fase de definición y configuración inicial.** En este momento el repositorio solo contiene la especificación maestra, este README y plantillas de configuración. Todavía no se han creado el frontend, el backend, dependencias ni funcionalidades ejecutables.
+**Fase de base técnica inicial.** El repositorio cuenta con los scaffolds de backend FastAPI y frontend React + TypeScript. Todavía no incluye integración entre ambas capas ni funcionalidades de producto ejecutables.
 
 ## Estructura inicial
 
@@ -79,6 +79,9 @@ MAREA/
 ├── .env.example        # Variables previstas, sin secretos
 ├── .gitignore          # Exclusiones locales y de build
 ├── README.md           # Presentación del proyecto
+├── backend/             # Base FastAPI
+├── frontend/            # Base React + TypeScript
+├── scripts/             # Automatización auxiliar
 └── specs/
     └── MASTER_SPEC.md  # Especificación maestra
 ```
