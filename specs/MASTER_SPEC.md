@@ -16,21 +16,25 @@ La creación multicanal suele producir textos repetidos, exige repetir trabajo e
 
 ## 3. Usuarios y perfiles
 
-Los perfiles podrán representar personas, marcas, empresas o proyectos. Cada perfil deberá admitir: nombre, descripción, profesión o sector, experiencia, conocimientos y competencias, audiencia, objetivos, tono, estilo, temas principales, temas a evitar, información de marca, instrucciones personalizadas y plataformas habituales.
+Los perfiles podrán representar personas, marcas, empresas o proyectos. Cada perfil deberá admitir: nombre, descripción, profesión o sector, experiencia, conocimientos y competencias, uno o varios nichos con sus subnichos opcionales, audiencia, objetivos, tono, estilo, temas principales, temas a evitar, información de marca, instrucciones personalizadas y plataformas habituales.
 
 El uso de perfiles evitará depender de cambios en el código para personalizar generaciones de distintos usuarios.
+
+El nicho define el ámbito o sector temático en el que se posiciona el contenido; la audiencia define para quién se crea. Son datos distintos y se conservarán como tales. Los nichos no estarán cerrados ni asociados a una persona concreta: se podrán elegir entre sugerencias o introducir de forma personalizada, y un perfil podrá trabajar con más de uno.
 
 ## 4. Alcance funcional
 
 ### 4.1 Crear desde una idea
 
-La persona usuaria proporcionará tema o idea, objetivo, audiencia, tono, idioma, contexto adicional y podrá seleccionar una plataforma, varias o todas las disponibles. Las plataformas iniciales son LinkedIn, Instagram, Facebook y blog.
+La persona usuaria proporcionará tema o idea, objetivo, audiencia, tono, idioma, contexto adicional y podrá seleccionar una plataforma, varias o todas las disponibles. El nicho será recomendado, pero no obligatorio para generar contenido; podrá elegirse entre sugerencias o introducirse de forma personalizada. El subnicho será opcional. Las plataformas iniciales son LinkedIn, Instagram, Facebook y blog.
 
-El sistema generará propuestas adaptadas; no reutilizará un único texto sin cambios. Cada resultado será independiente por plataforma y podrá visualizarse, editarse, regenerarse, copiarse, descargarse, guardarse o descartarse. Regenerar una pieza no deberá alterar las demás ya aprobadas.
+El sistema generará propuestas adaptadas; no reutilizará un único texto sin cambios. El contexto de generación combinará perfil, nicho o subnicho, audiencia, objetivo, plataforma, tono, idioma y tema solicitado. Cada resultado será independiente por plataforma y podrá visualizarse, editarse, regenerarse, copiarse, descargarse, guardarse o descartarse. Regenerar una pieza no deberá alterar las demás ya aprobadas.
 
 ### 4.2 Radar de tendencias
 
-El Radar buscará temas actuales y los cruzará con el perfil, conocimientos y competencias del creador. Su objetivo es inspirar contenido original, no copiar ni parafrasear publicaciones de terceros.
+El Radar buscará temas actuales y los cruzará con el nicho o subnicho, el perfil, los conocimientos y competencias reales del creador y la audiencia. Conceptualmente: tendencias actuales + nicho/subnicho + perfil + competencias reales + audiencia → propuestas originales de contenido.
+
+Su objetivo es usar la actualidad como señal para inspirar oportunidades originales compatibles con el perfil; no copiará ni parafraseará publicaciones de terceros, ni recomendará contenido que obligue a aparentar conocimientos o experiencia inexistentes.
 
 ### 4.3 Revisión humana y salida
 
@@ -99,7 +103,7 @@ Navegación prevista: Inicio, Crear, Radar, Biblioteca, Ciencia, Perfiles y Conf
 
 | Prioridad | Nivel | Entregables funcionales |
 | --- | --- | --- |
-| P0 | Esencial | Frontend funcional, generación de texto, selección de plataformas, LinkedIn, Instagram, Facebook, blog, audiencia, tono, prompt engineering, edición, copia/descarga y README. |
+| P0 | Esencial | Frontend funcional, generación de texto, selección de plataformas, LinkedIn, Instagram, Facebook, blog, nicho, audiencia, tono, prompt engineering, edición, copia/descarga y README. |
 | P1 | Medio | Docker, dos LLM, perfiles, personalización, imágenes, persistencia e historial. |
 | P2 | Avanzado | ES/EN/FR/IT, trazabilidad, Radar, noticias financieras, RAG científico, arXiv y Chroma. |
 | P3 | Experto | Multiagentes, evaluación y guardrails. |

@@ -17,10 +17,10 @@ MAREA propondrá un flujo asistido por IA que parta de una idea o de una tendenc
 ## Funcionalidades planificadas
 
 - Generación de contenido para LinkedIn, Instagram, Facebook y blog, con adaptación por canal y selección de una, varias o todas las plataformas disponibles.
-- Configuración de objetivo, audiencia, tono, idioma y contexto.
-- Perfiles reutilizables para personas, marcas, empresas o proyectos.
+- Configuración de nicho, subnicho opcional, objetivo, audiencia, tono, idioma y contexto; el nicho podrá elegirse entre sugerencias o definirse libremente.
+- Perfiles reutilizables para personas, marcas, empresas o proyectos, con uno o varios nichos, competencias y preferencias editoriales.
 - Revisión humana, edición, regeneración independiente, guardado, descarte, copia y descarga.
-- Radar de tendencias para inspirar contenido original sin copiar publicaciones de terceros.
+- Radar de tendencias para inspirar contenido original sin copiar publicaciones de terceros, cruzando actualidad, nicho, perfil, competencias reales y audiencia.
 - Biblioteca e historial de generaciones.
 - Divulgación científica basada en fuentes de arXiv mediante RAG.
 - Contexto de actualidad financiera desde una fuente externa.
@@ -62,7 +62,7 @@ La prioridad es mantener un flujo completo utilizable sin servicios de pago, fav
 
 | Nivel | Alcance |
 | --- | --- |
-| Esencial (P0) | Flujo funcional de generación, plataformas, audiencia, tono, edición, copia/descarga y README. |
+| Esencial (P0) | Flujo funcional de generación, plataformas, nicho, audiencia, tono, edición, copia/descarga y README. |
 | Medio (P1) | Docker, dos LLM, perfiles, personalización, imágenes, persistencia e historial. |
 | Avanzado (P2) | ES/EN/FR/IT, trazabilidad, Radar, actualidad financiera y RAG científico con arXiv y Chroma. |
 | Experto | Multiagentes, evaluación y guardrails. |
