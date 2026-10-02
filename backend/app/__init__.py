@@ -1,0 +1,1 @@
+"""MAREA backend application package."""
