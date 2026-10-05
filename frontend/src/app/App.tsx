@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
+import { Route, Routes } from 'react-router-dom'
 
+import { AppShell } from './layout/AppShell'
 import { createApiClient } from '../services/api'
+import { HomePage } from '../pages/HomePage'
+import { SectionPlaceholder } from '../pages/SectionPlaceholder'
 
 type ConnectionState = 'loading' | 'success' | 'error'
 
@@ -29,15 +33,17 @@ function App() {
   }, [])
 
   return (
-    <main>
-      <h1>MAREA</h1>
-      <p>Una idea que llega más lejos.</p>
-      <section aria-live="polite" aria-label="Estado de conexión">
-        {connectionState === 'loading' && <p>Comprobando conexión con el servicio…</p>}
-        {connectionState === 'success' && <p>Servicio disponible.</p>}
-        {connectionState === 'error' && <p>No se pudo conectar con el servicio. Inténtalo de nuevo más tarde.</p>}
-      </section>
-    </main>
+    <AppShell connectionState={connectionState}>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/crear" element={<SectionPlaceholder title="Crear" />} />
+        <Route path="/radar" element={<SectionPlaceholder title="Radar" />} />
+        <Route path="/biblioteca" element={<SectionPlaceholder title="Biblioteca" />} />
+        <Route path="/ciencia" element={<SectionPlaceholder title="Ciencia" />} />
+        <Route path="/perfiles" element={<SectionPlaceholder title="Perfiles" />} />
+        <Route path="/configuracion" element={<SectionPlaceholder title="Configuración" />} />
+      </Routes>
+    </AppShell>
   )
 }
 
