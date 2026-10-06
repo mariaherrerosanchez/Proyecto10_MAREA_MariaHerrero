@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router-dom'
 import { AppShell } from './layout/AppShell'
 import { createApiClient } from '../services/api'
 import { HomePage } from '../pages/HomePage'
+import { CreatePage } from '../pages/CreatePage'
 import { SectionPlaceholder } from '../pages/SectionPlaceholder'
 
 type ConnectionState = 'loading' | 'success' | 'error'
@@ -36,7 +37,7 @@ function App() {
     <AppShell connectionState={connectionState}>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/crear" element={<SectionPlaceholder title="Crear" />} />
+        <Route path="/crear" element={<CreatePage />} />
         <Route path="/radar" element={<SectionPlaceholder title="Radar" />} />
         <Route path="/biblioteca" element={<SectionPlaceholder title="Biblioteca" />} />
         <Route path="/ciencia" element={<SectionPlaceholder title="Ciencia" />} />

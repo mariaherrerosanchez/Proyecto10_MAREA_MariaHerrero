@@ -30,9 +30,9 @@ El nicho define el ámbito o sector temático en el que se posiciona el contenid
 
 ### 4.1 Crear desde una idea
 
-La persona usuaria proporcionará tema o idea, objetivo, audiencia, tono, idioma, contexto adicional y podrá seleccionar una plataforma, varias o todas las disponibles. El nicho será recomendado, pero no obligatorio para generar contenido; podrá elegirse entre sugerencias o introducirse de forma personalizada. El subnicho será opcional. Las plataformas iniciales son LinkedIn, Instagram, Facebook y blog.
+La persona usuaria proporcionará tema o idea, objetivo, audiencia, tono, idioma, contexto adicional y podrá seleccionar una plataforma, varias o todas las disponibles. Podrá elegir cero, uno o varios nichos recomendados o personalizados; son ámbitos que pueden combinarse y no serán obligatorios para generar contenido. El subnicho o especialización adicional será opcional. Las plataformas iniciales son LinkedIn, Instagram, Facebook y blog.
 
-El sistema generará propuestas adaptadas; no reutilizará un único texto sin cambios. El contexto de generación combinará perfil, nicho o subnicho, audiencia, objetivo, plataforma, tono, idioma y tema solicitado. Cada resultado será independiente por plataforma y podrá visualizarse, editarse, regenerarse, copiarse, descargarse, guardarse o descartarse. Regenerar una pieza no deberá alterar las demás ya aprobadas.
+El sistema generará propuestas adaptadas; no reutilizará un único texto sin cambios. El contexto de generación combinará perfil, uno o varios nichos, subnicho o especialización adicional, audiencia, objetivo, plataforma, tono, idioma, contexto adicional y tema solicitado. Cada resultado será independiente por plataforma y podrá visualizarse, editarse, regenerarse, copiarse, descargarse, guardarse o descartarse. Regenerar una pieza no deberá alterar las demás ya aprobadas.
 
 Cuando exista cuenta, el contexto se resolverá con esta precedencia: **solicitud actual > perfil seleccionado > preferencias de cuenta**. Las preferencias de cuenta son defaults editables y nunca impedirán una sobrescritura consciente de la persona usuaria.
 

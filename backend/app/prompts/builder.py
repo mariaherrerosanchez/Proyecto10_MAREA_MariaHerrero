@@ -34,7 +34,6 @@ class PromptBuilder:
         prompt_value = self._template.invoke(
             {
                 "topic": context.topic,
-                "niche": context.niche,
                 "objective": context.objective,
                 "audience": context.audience,
                 "tone": context.tone,
@@ -51,12 +50,16 @@ class PromptBuilder:
 
 
 def _optional_request_sections(context: GenerationContext) -> str:
-    return _format_text_sections(
+    request_niches = _format_list_sections(
+        (("Nichos de la solicitud", context.niches),)
+    )
+    optional_text = _format_text_sections(
         (
-            ("Subnicho", context.subniche),
+            ("Subnicho o especialización adicional", context.subniche),
             ("Contexto adicional", context.additional_context),
         )
     )
+    return request_niches + optional_text
 
 
 def _profile_sections(profile: ProfilePromptContext | None) -> str:
