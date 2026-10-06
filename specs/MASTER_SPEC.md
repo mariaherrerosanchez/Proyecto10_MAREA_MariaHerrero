@@ -26,6 +26,8 @@ Los perfiles pertenecerán a una cuenta y no sustituirán su identidad ni sus pr
 
 El nicho define el ámbito o sector temático en el que se posiciona el contenido; la audiencia define para quién se crea. Son datos distintos y se conservarán como tales. Los nichos no estarán cerrados ni asociados a una persona concreta: se podrán elegir entre sugerencias o introducir de forma personalizada, y un perfil podrá trabajar con más de uno.
 
+Las fuentes verificadas de contexto se gestionarán separadamente del perfil: podrán incluir información manual, documentos aportados, CV como un tipo posible de fuente, publicaciones anteriores autorizadas e información de negocio. Cada fuente deberá conservar procedencia y autorización. MAREA minimizará el contexto enviado al LLM y no asumirá scraping de redes sociales.
+
 ## 4. Alcance funcional
 
 ### 4.1 Crear desde una idea
@@ -38,9 +40,9 @@ Cuando exista cuenta, el contexto se resolverá con esta precedencia: **solicitu
 
 ### 4.2 Radar de tendencias
 
-El Radar buscará temas actuales y los cruzará con el nicho o subnicho, el perfil, los conocimientos y competencias reales del creador y la audiencia. Cuando no exista un contexto más específico, podrá usar las preferencias de cuenta como fallback. Conceptualmente: tendencias actuales + nicho/subnicho + perfil + competencias reales + audiencia → propuestas originales de contenido.
+El Radar buscará temas actuales y los cruzará con los nichos o la especialización adicional, el perfil, los conocimientos y competencias reales del creador y la audiencia. Cuando no exista un contexto más específico, podrá usar las preferencias de cuenta como fallback. Conceptualmente: tendencias actuales + nichos/especialización + perfil + competencias reales + audiencia → propuestas originales de contenido.
 
-Su objetivo es usar la actualidad como señal para inspirar oportunidades originales compatibles con el perfil; no copiará ni parafraseará publicaciones de terceros, ni recomendará contenido que obligue a aparentar conocimientos o experiencia inexistentes.
+Su objetivo es usar la actualidad como señal para inspirar oportunidades originales compatibles con el perfil; no copiará ni parafraseará publicaciones de terceros, ni recomendará contenido que obligue a aparentar conocimientos o experiencia inexistentes. Una tendencia podrá enviarse a Crear como contexto de inspiración, nunca como texto que deba reproducirse.
 
 ### 4.3 Revisión humana y salida
 
@@ -54,7 +56,7 @@ MAREA no publicará automáticamente tras generar contenido. Para la entrega aca
 
 ### 4.4 Imagen
 
-La generación de imágenes se abstraerá detrás de un `ImageProvider`. Deberá poder usar alternativas gratuitas o locales y no bloqueará el funcionamiento del producto cuando no esté disponible.
+La generación de imágenes se abstraerá detrás de un `ImageProvider`. Deberá poder usar alternativas gratuitas o locales y no bloqueará el funcionamiento del producto cuando no esté disponible. Los estados y errores de texto e imagen se tratarán de forma independiente para poder continuar sin imagen.
 
 ### 4.5 Idiomas
 
@@ -81,12 +83,17 @@ Una fuente o API externa proporcionará datos de mercados actualizados al LLM. L
 - Las claves y secretos no se versionarán; se documentarán mediante `.env.example`.
 - La aplicación será extensible respecto a LLM, imágenes y conectores sociales.
 - La interfaz prevista será profesional y evitará una estética genérica de producto de IA; comunicará movimiento, creación, expansión y comunicación.
+- La revisión humana seguirá siendo obligatoria antes de cualquier salida; la interfaz mostrará de forma segura el proveedor, modelo y si el procesamiento es local o externo cuando corresponda.
+- Los guardrails impedirán presentar como hechos información no respaldada sobre una persona o negocio, sin impedir contenido creativo claramente diferenciado.
+- La evaluación de LLM combinará un harness local reproducible y datasets versionados, separado de los tests de software; las llamadas reales de evaluación serán explícitamente opcionales.
+- La privacidad por diseño exigirá minimización de contexto, procedencia y autorización de fuentes, y eliminación de datos propios cuando exista persistencia.
+- No se harán afirmaciones de sostenibilidad que no estén respaldadas ni se introducirán agentes si no aportan un valor demostrable.
 
 ## 6. Trazabilidad y persistencia
 
 Se persistirán con SQLite y SQLAlchemy: cuentas, preferencias de cuenta, perfiles, configuraciones, generaciones, contenidos, fuentes, trazabilidad y metadatos. Las relaciones de propiedad permitirán consultar y aislar los datos de la cuenta activa.
 
-Cuando proceda, cada generación registrará timestamp, proveedor, modelo, tipo de generación, configuración, plataforma, duración, fuentes, resultado y errores. LangSmith podrá evaluarse como apoyo opcional de observabilidad.
+Cuando proceda, cada generación registrará timestamp, proveedor, modelo, tipo de generación, configuración, plataforma, duración, fuentes, resultado y errores. LangSmith será un apoyo opcional, desactivado por defecto, para trazas, datasets, experimentos, evaluaciones y comparativas; su ausencia o fallo no bloqueará la aplicación ni el harness local.
 
 ## 7. Arquitectura técnica prevista
 
@@ -100,7 +107,7 @@ Cuando proceda, cada generación registrará timestamp, proveedor, modelo, tipo 
 | Persistencia | SQLite y SQLAlchemy |
 | Vectorial | Chroma |
 | RAG | LangChain y arXiv |
-| Pruebas | Pytest y herramientas apropiadas del ecosistema React |
+| Pruebas | Pytest, herramientas apropiadas del ecosistema React y harness local reproducible de evaluación |
 | Entrega | Docker Compose y GitHub Projects |
 
 Navegación prevista: Inicio, Crear, Radar, Biblioteca, Ciencia, Perfiles y Configuración.
@@ -109,11 +116,11 @@ Navegación prevista: Inicio, Crear, Radar, Biblioteca, Ciencia, Perfiles y Conf
 
 | Prioridad | Nivel | Entregables funcionales |
 | --- | --- | --- |
-| P0 | Esencial | Frontend funcional, generación de texto, selección de plataformas, LinkedIn, Instagram, Facebook, blog, nicho, audiencia, tono, prompt engineering, edición, copia/descarga y README. |
-| P1 | Medio | Docker, dos LLM, cuentas, perfiles, personalización, imágenes, persistencia e historial. |
+| P0 | Esencial | Frontend funcional, generación de texto, guardrails mínimos, harness reproducible de evaluación, presentación transparente, selección de plataformas, LinkedIn, Instagram, Facebook, blog, nichos, audiencia, tono, edición, copia/descarga y README. |
+| P1 | Medio | Docker, dos LLM, cuentas, perfiles, fuentes verificadas, personalización, imágenes, persistencia, historial, retención y eliminación de datos. |
 | P2 | Avanzado | ES/EN/FR/IT, trazabilidad, Radar, noticias financieras, RAG científico, arXiv y Chroma. |
-| P3 | Experto | Multiagentes, evaluación y guardrails. |
-| Stretch | Experimental | Graph RAG; no es requisito comprometido. |
+| P3 | Experto | Multiagentes. |
+| Stretch | Experimental | Ollama, imágenes, perfiles y fuentes, Radar, RAG científico, LangSmith y Graph RAG; no son requisitos comprometidos. |
 
 ## 9. Límites de la fase actual
 
@@ -142,6 +149,6 @@ La base técnica ya incluye los directorios `frontend/` y `backend/`, aplicacion
 - Elegir la fuente financiera concreta y revisar sus límites de uso.
 - Definir modelos locales mínimos y requisitos de hardware para Ollama.
 - Determinar el proveedor o implementación inicial de `ImageProvider`.
-- Concretar el esquema de datos, contratos API y criterios de calidad antes de construir P0.
-- Evaluar LangSmith según privacidad, coste y necesidad de observabilidad.
+- Concretar el esquema de datos, contratos API y criterios de calidad antes de construir las capacidades pendientes de P0.
+- Definir la política de privacidad, consentimiento y minimización de datos antes de habilitar LangSmith o fuentes personales.
 - Elegir el mecanismo de autenticación, almacenamiento de credenciales y gestión de sesión para las cuentas, manteniendo fuera de alcance por ahora recuperación de contraseña, verificación de email, OAuth, proveedores externos, roles y administración.
