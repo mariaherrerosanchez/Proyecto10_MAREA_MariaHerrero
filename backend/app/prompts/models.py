@@ -2,7 +2,7 @@
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, StringConstraints, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 RequiredText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
@@ -18,13 +18,15 @@ class ProfilePromptContext(BaseModel):
 class GenerationContext(BaseModel):
     """Explicit request data used to build one structured prompt."""
 
+    model_config = ConfigDict(extra="forbid")
+
     topic: RequiredText
-    niche: RequiredText
     objective: RequiredText
     audience: RequiredText
     tone: RequiredText
     language: RequiredText
     platform: RequiredText
+    niches: list[RequiredText] = Field(default_factory=list)
     subniche: str | None = None
     additional_context: str | None = None
     profile_context: ProfilePromptContext | None = None
@@ -43,5 +45,5 @@ class GenerationContext(BaseModel):
 class PromptTrace(BaseModel):
     """Transient configuration snapshot until trace persistence is implemented."""
 
-    prompt_version: Literal["v1"] = "v1"
+    prompt_version: Literal["v2"] = "v2"
     context: GenerationContext

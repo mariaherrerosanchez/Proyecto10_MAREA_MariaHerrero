@@ -30,10 +30,10 @@ class FailingProvider:
         raise ProviderInvocationError(self.metadata) from original_error
 
 
-def valid_request_body() -> dict[str, str]:
+def valid_request_body() -> dict[str, object]:
     return {
         "topic": "Explicar qué es MAREA",
-        "niche": "Tecnología",
+        "niches": ["Inteligencia Artificial", "QA / Testing"],
         "objective": "Divulgación",
         "audience": "Profesionales no técnicos",
         "tone": "Cercano y profesional",
@@ -57,7 +57,7 @@ def test_generation_endpoint_returns_text_and_provider_metadata() -> None:
         "provider": "groq",
         "model": "configured-model",
         "trace": {
-            "prompt_version": "v1",
+            "prompt_version": "v2",
             "context": valid_request_body()
             | {
                 "subniche": None,
@@ -118,14 +118,28 @@ def test_generation_endpoint_hides_provider_failure_details() -> None:
     assert "secret-that-must-not-reach-the-client" not in response.text
 
 
-def test_generation_endpoint_requires_niche() -> None:
+def test_generation_endpoint_defaults_absent_niches_to_an_empty_list() -> None:
     application = create_app(Settings(_env_file=None))
     application.dependency_overrides[get_generation_service] = lambda: GenerationService(
         SuccessfulProvider(), PromptBuilder()
     )
     client = TestClient(application)
     request_body = valid_request_body()
-    request_body.pop("niche")
+    request_body.pop("niches")
+
+    response = client.post("/generation", json=request_body)
+
+    assert response.status_code == 200
+    assert response.json()["trace"]["context"]["niches"] == []
+
+
+def test_generation_endpoint_rejects_the_replaced_singular_niche_field() -> None:
+    application = create_app(Settings(_env_file=None))
+    application.dependency_overrides[get_generation_service] = lambda: GenerationService(
+        SuccessfulProvider(), PromptBuilder()
+    )
+    client = TestClient(application)
+    request_body = valid_request_body() | {"niche": "Tecnología"}
 
     response = client.post("/generation", json=request_body)
 

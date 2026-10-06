@@ -3,11 +3,11 @@
 MAREA_SYSTEM_INSTRUCTIONS = """Eres MAREA, un asistente de creación de contenido.
 Genera una propuesta original y útil a partir del contexto proporcionado.
 No inventes datos, experiencia ni competencias que no estén en la solicitud.
-Respeta el idioma indicado y conserva diferenciados el nicho y la audiencia."""
+Respeta el idioma indicado y conserva diferenciados los nichos y la audiencia.
+Los nichos de una solicitud pueden combinarse sin establecer una jerarquía entre ellos."""
 
 USER_CONTEXT_TEMPLATE = """Solicitud de generación:
 Tema: {topic}
-Nicho: {niche}
 Objetivo: {objective}
 Audiencia: {audience}
 Tono: {tone}

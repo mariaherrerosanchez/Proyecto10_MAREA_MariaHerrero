@@ -17,7 +17,7 @@ MAREA propondrá un flujo asistido por IA que parta de una idea o de una tendenc
 ## Funcionalidades planificadas
 
 - Generación de contenido para LinkedIn, Instagram, Facebook y blog, con adaptación por canal y selección de una, varias o todas las plataformas disponibles.
-- Configuración de nicho, subnicho opcional, objetivo, audiencia, tono, idioma y contexto; el nicho podrá elegirse entre sugerencias o definirse libremente.
+- Configuración de uno o varios nichos, subnicho o especialización opcional, objetivo, audiencia, tono, idioma y contexto adicional; los nichos podrán elegirse entre sugerencias estáticas o definirse libremente.
 - Perfiles reutilizables para personas, marcas, empresas o proyectos, con uno o varios nichos, competencias y preferencias editoriales.
 - Cuentas con identidad, preferencias personales y propiedad aislada de perfiles, generaciones, biblioteca e historial; la cuenta se diferenciará de los perfiles de creador o marca.
 - Revisión humana, edición, regeneración independiente, guardado, descarte, copia y descarga.
@@ -77,13 +77,13 @@ Para una comprobación manual —no ejecutada por la suite— inicia el backend 
 uv run uvicorn app.main:app --reload
 ```
 
-Después, en otra terminal, puede comprobarse el endpoint técnico estructurado sin interfaz. `niche` y `audience` son campos distintos; el subnicho, contexto adicional y contexto editorial de perfil son opcionales:
+Después, en otra terminal, puede comprobarse el endpoint técnico estructurado sin interfaz. `niches` y `audience` son campos distintos; `niches` admite cero, uno o varios ámbitos combinados. El subnicho o especialización adicional, el contexto adicional y el contexto editorial de perfil son opcionales:
 
 ```powershell
 Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/generation `
   -ContentType "application/json" -Body '{
     "topic":"Explica qué es MAREA en dos frases.",
-    "niche":"Tecnología",
+    "niches":["Tecnología", "QA / Testing"],
     "objective":"Divulgación",
     "audience":"Profesionales no técnicos",
     "tone":"Cercano y profesional",

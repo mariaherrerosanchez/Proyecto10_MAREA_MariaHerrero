@@ -26,7 +26,7 @@ def test_generation_service_depends_only_on_the_provider_contract() -> None:
     result = service.generate(
         GenerationContext(
             topic="Raw prompt",
-            niche="Tecnología",
+            niches=["Tecnología"],
             objective="Explicar",
             audience="Personas interesadas",
             tone="Cercano",
@@ -41,4 +41,4 @@ def test_generation_service_depends_only_on_the_provider_contract() -> None:
         text="Generated text",
         metadata=ProviderMetadata(provider="fake", model="fake-model"),
     )
-    assert result.trace.prompt_version == "v1"
+    assert result.trace.prompt_version == "v2"
