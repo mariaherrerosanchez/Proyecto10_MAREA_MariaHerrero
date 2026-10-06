@@ -19,6 +19,7 @@ MAREA propondrá un flujo asistido por IA que parta de una idea o de una tendenc
 - Generación de contenido para LinkedIn, Instagram, Facebook y blog, con adaptación por canal y selección de una, varias o todas las plataformas disponibles.
 - Configuración de nicho, subnicho opcional, objetivo, audiencia, tono, idioma y contexto; el nicho podrá elegirse entre sugerencias o definirse libremente.
 - Perfiles reutilizables para personas, marcas, empresas o proyectos, con uno o varios nichos, competencias y preferencias editoriales.
+- Cuentas con identidad, preferencias personales y propiedad aislada de perfiles, generaciones, biblioteca e historial; la cuenta se diferenciará de los perfiles de creador o marca.
 - Revisión humana, edición, regeneración independiente, guardado, descarte, copia y descarga.
 - Radar de tendencias para inspirar contenido original sin copiar publicaciones de terceros, cruzando actualidad, nicho, perfil, competencias reales y audiencia.
 - Biblioteca e historial de generaciones.
@@ -70,9 +71,9 @@ La prioridad es mantener un flujo completo utilizable sin servicios de pago, fav
 
 ## Estado actual
 
-**Fase de base técnica inicial.** El repositorio cuenta con los scaffolds de backend FastAPI y frontend React + TypeScript. Todavía no incluye integración entre ambas capas ni funcionalidades de producto ejecutables.
+**Base técnica y experiencia inicial implementadas.** El repositorio cuenta con backend FastAPI, frontend React + TypeScript, comunicación local de comprobación y un layout responsive. Los flujos funcionales de generación, perfiles, cuenta, persistencia y Radar siguen planificados.
 
-## Estructura inicial
+## Estructura actual
 
 ```text
 MAREA/
@@ -86,11 +87,11 @@ MAREA/
     └── MASTER_SPEC.md  # Especificación maestra
 ```
 
-La convención de estructura, nombres y ramas se define en la sección 9.1 de la especificación maestra. Los directorios de aplicación se crearán únicamente al iniciar su implementación.
+La convención de estructura, nombres y ramas se define en la sección 9.1 de la especificación maestra.
 
 ## Próximos pasos
 
-Definir los hitos de P0, crear la estructura técnica cuando corresponda y validar un flujo mínimo de generación local antes de ampliar proveedores o capacidades avanzadas.
+Completar el flujo mínimo de generación local y avanzar en perfiles, cuenta, persistencia y Radar según los hitos definidos antes de ampliar proveedores o capacidades avanzadas.
 
 ## Entregables previstos
 
