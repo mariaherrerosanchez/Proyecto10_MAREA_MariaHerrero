@@ -77,14 +77,22 @@ Para una comprobación manual —no ejecutada por la suite— inicia el backend 
 uv run uvicorn app.main:app --reload
 ```
 
-Después, en otra terminal, puede comprobarse el endpoint técnico sin interfaz:
+Después, en otra terminal, puede comprobarse el endpoint técnico estructurado sin interfaz. `niche` y `audience` son campos distintos; el subnicho, contexto adicional y contexto editorial de perfil son opcionales:
 
 ```powershell
 Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/generation `
-  -ContentType "application/json" -Body '{"prompt":"Escribe un saludo breve."}'
+  -ContentType "application/json" -Body '{
+    "topic":"Explica qué es MAREA en dos frases.",
+    "niche":"Tecnología",
+    "objective":"Divulgación",
+    "audience":"Profesionales no técnicos",
+    "tone":"Cercano y profesional",
+    "language":"es",
+    "platform":"linkedin"
+  }'
 ```
 
-Las pruebas automatizadas no contactan con Groq ni requieren una clave real.
+La respuesta incluye temporalmente una traza con la versión de prompt y el contexto usado. Aún no se persiste; la persistencia de trazabilidad pertenece a historias posteriores. Las pruebas automatizadas no contactan con Groq ni requieren una clave real.
 
 ## Roadmap
 

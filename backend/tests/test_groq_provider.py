@@ -1,7 +1,7 @@
 """Tests for Groq construction without calling the external provider."""
 
 import pytest
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from app.core.config import Settings
 from app.llm.factory import (
@@ -36,7 +36,7 @@ def test_groq_provider_uses_model_and_key_from_private_settings(monkeypatch) -> 
     )
 
     provider = create_llm_provider(settings)
-    response = provider.generate(LLMRequest(prompt="Hola"))
+    response = provider.generate(LLMRequest(messages=(HumanMessage(content="Hola"),)))
 
     assert response.text == "Texto de prueba"
     assert response.metadata == ProviderMetadata(

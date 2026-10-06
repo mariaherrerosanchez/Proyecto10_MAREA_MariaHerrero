@@ -8,6 +8,7 @@ from app.generation.service import GenerationService
 from app.llm.provider import ProviderInvocationError
 from app.llm.types import LLMRequest, LLMResponse, ProviderMetadata
 from app.main import create_app
+from app.prompts.builder import PromptBuilder
 
 
 class SuccessfulProvider:
@@ -29,20 +30,41 @@ class FailingProvider:
         raise ProviderInvocationError(self.metadata) from original_error
 
 
+def valid_request_body() -> dict[str, str]:
+    return {
+        "topic": "Explicar qué es MAREA",
+        "niche": "Tecnología",
+        "objective": "Divulgación",
+        "audience": "Profesionales no técnicos",
+        "tone": "Cercano y profesional",
+        "language": "es",
+        "platform": "linkedin",
+    }
+
+
 def test_generation_endpoint_returns_text_and_provider_metadata() -> None:
     application = create_app(Settings(_env_file=None))
     application.dependency_overrides[get_generation_service] = lambda: GenerationService(
-        SuccessfulProvider()
+        SuccessfulProvider(), PromptBuilder()
     )
     client = TestClient(application)
 
-    response = client.post("/generation", json={"prompt": "Hola"})
+    response = client.post("/generation", json=valid_request_body())
 
     assert response.status_code == 200
     assert response.json() == {
         "text": "Texto generado",
         "provider": "groq",
         "model": "configured-model",
+        "trace": {
+            "prompt_version": "v1",
+            "context": valid_request_body()
+            | {
+                "subniche": None,
+                "additional_context": None,
+                "profile_context": None,
+            },
+        },
     }
 
 
@@ -50,7 +72,7 @@ def test_generation_endpoint_explains_missing_configuration_safely() -> None:
     application = create_app(Settings(_env_file=None))
     client = TestClient(application, raise_server_exceptions=False)
 
-    response = client.post("/generation", json={"prompt": "Hola"})
+    response = client.post("/generation", json=valid_request_body())
 
     assert response.status_code == 503
     assert response.json() == {
@@ -69,7 +91,7 @@ def test_generation_endpoint_explains_recognized_unavailable_provider() -> None:
     )
     client = TestClient(application, raise_server_exceptions=False)
 
-    response = client.post("/generation", json={"prompt": "Hola"})
+    response = client.post("/generation", json=valid_request_body())
 
     assert response.status_code == 503
     assert response.json() == {
@@ -81,16 +103,30 @@ def test_generation_endpoint_explains_recognized_unavailable_provider() -> None:
 def test_generation_endpoint_hides_provider_failure_details() -> None:
     application = create_app(Settings(_env_file=None))
     application.dependency_overrides[get_generation_service] = lambda: GenerationService(
-        FailingProvider()
+        FailingProvider(), PromptBuilder()
     )
     client = TestClient(application, raise_server_exceptions=False)
 
-    response = client.post("/generation", json={"prompt": "Prompt privado"})
+    response = client.post("/generation", json=valid_request_body())
 
     assert response.status_code == 502
     assert response.json() == {
         "code": "provider_request_failed",
         "detail": "No se ha podido generar el texto en este momento. Inténtalo de nuevo.",
     }
-    assert "Prompt privado" not in response.text
+    assert "Explicar qué es MAREA" not in response.text
     assert "secret-that-must-not-reach-the-client" not in response.text
+
+
+def test_generation_endpoint_requires_niche() -> None:
+    application = create_app(Settings(_env_file=None))
+    application.dependency_overrides[get_generation_service] = lambda: GenerationService(
+        SuccessfulProvider(), PromptBuilder()
+    )
+    client = TestClient(application)
+    request_body = valid_request_body()
+    request_body.pop("niche")
+
+    response = client.post("/generation", json=request_body)
+
+    assert response.status_code == 422

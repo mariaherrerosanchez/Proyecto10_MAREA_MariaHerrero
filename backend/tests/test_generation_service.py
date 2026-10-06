@@ -2,6 +2,8 @@
 
 from app.generation.service import GenerationService
 from app.llm.types import LLMRequest, LLMResponse, ProviderMetadata
+from app.prompts.builder import PromptBuilder
+from app.prompts.models import GenerationContext
 
 
 class RecordingProvider:
@@ -19,12 +21,24 @@ class RecordingProvider:
 
 def test_generation_service_depends_only_on_the_provider_contract() -> None:
     provider = RecordingProvider()
-    service = GenerationService(provider)
+    service = GenerationService(provider, PromptBuilder())
 
-    response = service.generate("Raw prompt")
+    result = service.generate(
+        GenerationContext(
+            topic="Raw prompt",
+            niche="Tecnología",
+            objective="Explicar",
+            audience="Personas interesadas",
+            tone="Cercano",
+            language="es",
+            platform="blog",
+        )
+    )
 
-    assert provider.requests == [LLMRequest(prompt="Raw prompt")]
-    assert response == LLMResponse(
+    assert len(provider.requests) == 1
+    assert len(provider.requests[0].messages) == 2
+    assert result.response == LLMResponse(
         text="Generated text",
         metadata=ProviderMetadata(provider="fake", model="fake-model"),
     )
+    assert result.trace.prompt_version == "v1"

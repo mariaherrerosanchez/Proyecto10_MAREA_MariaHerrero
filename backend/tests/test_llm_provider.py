@@ -24,14 +24,14 @@ class FakeProvider:
     metadata = ProviderMetadata(provider="fake", model="fake-model")
 
     def generate(self, request: LLMRequest) -> LLMResponse:
-        return LLMResponse(text=request.prompt, metadata=self.metadata)
+        return LLMResponse(text=str(request.messages[0].content), metadata=self.metadata)
 
 
 def test_common_provider_contract_is_runtime_checkable() -> None:
     provider = FakeProvider()
 
     assert isinstance(provider, LLMProvider)
-    assert provider.generate(LLMRequest(prompt="test")).text == "test"
+    assert provider.generate(LLMRequest(messages=(HumanMessage(content="test"),))).text == "test"
 
 
 def test_langchain_provider_invokes_injected_model_and_normalizes_response() -> None:
@@ -40,7 +40,7 @@ def test_langchain_provider_invokes_injected_model_and_normalizes_response() -> 
     metadata = ProviderMetadata(provider="groq", model="llama-test")
     provider = LangChainLLMProvider(model=model, metadata=metadata)
 
-    response = provider.generate(LLMRequest(prompt="Prompt de prueba"))
+    response = provider.generate(LLMRequest(messages=(HumanMessage(content="Prompt de prueba"),)))
 
     model.invoke.assert_called_once()
     messages = model.invoke.call_args.args[0]
@@ -94,7 +94,7 @@ def test_provider_failure_is_safe_traceable_and_preserves_original_cause(caplog)
 
     with caplog.at_level(logging.ERROR, logger="app.llm.langchain_provider"):
         with pytest.raises(ProviderInvocationError) as caught_error:
-            provider.generate(LLMRequest(prompt=prompt))
+            provider.generate(LLMRequest(messages=(HumanMessage(content=prompt),)))
 
     error = caught_error.value
     assert error.metadata == metadata
