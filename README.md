@@ -18,14 +18,15 @@ MAREA propondrá un flujo asistido por IA que parta de una idea o de una tendenc
 
 - Generación de contenido para LinkedIn, Instagram, Facebook y blog, con adaptación por canal y selección de una, varias o todas las plataformas disponibles.
 - Configuración de uno o varios nichos, subnicho o especialización opcional, objetivo, audiencia, tono, idioma y contexto adicional; los nichos podrán elegirse entre sugerencias estáticas o definirse libremente.
-- Perfiles reutilizables para personas, marcas, empresas o proyectos, con uno o varios nichos, competencias y preferencias editoriales.
+- Perfiles reutilizables para personas, marcas, empresas o proyectos, con uno o varios nichos, competencias y preferencias editoriales; las futuras fuentes verificadas conservarán procedencia y autorización sin asumir scraping de redes.
 - Cuentas con identidad, preferencias personales y propiedad aislada de perfiles, generaciones, biblioteca e historial; la cuenta se diferenciará de los perfiles de creador o marca.
 - Revisión humana, edición, regeneración independiente, guardado, descarte, copia y descarga.
-- Radar de tendencias para inspirar contenido original sin copiar publicaciones de terceros, cruzando actualidad, nicho, perfil, competencias reales y audiencia.
+- Radar de tendencias para inspirar contenido original sin copiar publicaciones de terceros, cruzando actualidad, nichos, perfil, competencias reales y audiencia.
 - Biblioteca e historial de generaciones.
 - Divulgación científica basada en fuentes de arXiv mediante RAG.
 - Contexto de actualidad financiera desde una fuente externa.
-- Trazabilidad de proveedores, modelos, fuentes, resultados y errores.
+- Guardrails contra afirmaciones personales no respaldadas y un harness local reproducible para evaluar resultados, separado de los tests de software.
+- Trazabilidad de proveedores, modelos, fuentes, resultados y errores; cuando corresponda, se indicará de forma transparente si el procesamiento es local o externo.
 - Una arquitectura extensible para futuros conectores de redes sociales e imágenes. La generación visual se gestionará mediante una abstracción de proveedor, priorizando soluciones gratuitas o locales; MAREA seguirá siendo completamente utilizable si este servicio no está disponible.
 
 ## Arquitectura prevista
@@ -57,7 +58,7 @@ La prioridad es mantener un flujo completo utilizable sin servicios de pago, fav
 | Modelos | Ollama, Groq, OpenRouter |
 | Datos | SQLite, SQLAlchemy, Chroma |
 | Fuentes | arXiv y una fuente externa de mercado financiero |
-| Calidad y entrega | Pytest, herramientas de test del ecosistema React, Docker Compose, GitHub Projects |
+| Calidad y entrega | Pytest, herramientas de test del ecosistema React, harness local de evaluación, Docker Compose, GitHub Projects |
 
 ## Configuración local
 
@@ -98,11 +99,11 @@ La respuesta incluye temporalmente una traza con la versión de prompt y el cont
 
 | Nivel | Alcance |
 | --- | --- |
-| Esencial (P0) | Flujo funcional de generación, plataformas, nicho, audiencia, tono, edición, copia/descarga y README. |
-| Medio (P1) | Docker, dos LLM, perfiles, personalización, imágenes, persistencia e historial. |
+| Esencial (P0) | Flujo funcional de generación, guardrails mínimos, evaluación reproducible, presentación transparente, plataformas, nichos, audiencia, tono, edición, copia/descarga y README. |
+| Medio (P1) | Docker, dos LLM, perfiles, fuentes verificadas, personalización, imágenes, persistencia, historial y retención de datos. |
 | Avanzado (P2) | ES/EN/FR/IT, trazabilidad, Radar, actualidad financiera y RAG científico con arXiv y Chroma. |
-| Experto | Multiagentes, evaluación y guardrails. |
-| Stretch | Graph RAG, sin compromiso de entrega. |
+| Experto | Multiagentes. |
+| Stretch | Ollama, imágenes, perfiles/fuentes, Radar, RAG científico, LangSmith y Graph RAG, sin compromiso de entrega. |
 
 ## Estado actual
 
