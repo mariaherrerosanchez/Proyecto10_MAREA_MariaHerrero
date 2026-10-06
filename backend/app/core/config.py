@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     )
     database_url: str = Field(default="sqlite:///./marea.db", validation_alias="DATABASE_URL")
 
+    llm_provider: str | None = Field(default=None, validation_alias="LLM_PROVIDER")
     groq_api_key: str | None = Field(default=None, validation_alias="GROQ_API_KEY")
     groq_model: str | None = Field(default=None, validation_alias="GROQ_MODEL")
     openrouter_api_key: str | None = Field(default=None, validation_alias="OPENROUTER_API_KEY")
@@ -49,6 +50,15 @@ class Settings(BaseSettings):
         """Return comma-separated CORS origins as a normalized list."""
 
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    def model_for_provider(self, provider: str) -> str | None:
+        """Return the configured model for a supported provider name."""
+
+        return {
+            "groq": self.groq_model,
+            "openrouter": self.openrouter_model,
+            "ollama": self.ollama_model,
+        }.get(provider)
 
 
 @lru_cache
