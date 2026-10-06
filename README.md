@@ -59,6 +59,14 @@ La prioridad es mantener un flujo completo utilizable sin servicios de pago, fav
 | Fuentes | arXiv y una fuente externa de mercado financiero |
 | Calidad y entrega | Pytest, herramientas de test del ecosistema React, Docker Compose, GitHub Projects |
 
+## Configuración local
+
+Para la configuración privada del backend, crea un archivo `.env` local a partir de `.env.example`. El backend carga ese archivo durante el desarrollo y las variables reales del entorno tienen prioridad sobre sus valores.
+
+La configuración del navegador se mantiene separada en `frontend/.env.local`, creado a partir de `frontend/.env.example`. Actualmente solo utiliza `VITE_API_BASE_URL`.
+
+Las variables con prefijo `VITE_` se incluyen en el bundle del navegador y son públicas. Nunca deben contener API keys, credenciales, URLs de base de datos, secretos de sesión ni otra información sensible.
+
 ## Roadmap
 
 | Nivel | Alcance |

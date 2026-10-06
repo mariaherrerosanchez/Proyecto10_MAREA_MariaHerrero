@@ -1,15 +1,22 @@
 """Runtime configuration for the MAREA API."""
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
     """Settings read from environment variables with safe local defaults."""
 
-    model_config = SettingsConfigDict(extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=PROJECT_ROOT / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     app_name: str = Field(default="MAREA API", validation_alias="APP_NAME")
     environment: str = Field(default="development", validation_alias="APP_ENV")
@@ -19,6 +26,22 @@ class Settings(BaseSettings):
     cors_origins: str = Field(
         default="http://localhost:5173",
         validation_alias="BACKEND_CORS_ORIGINS",
+    )
+    database_url: str = Field(default="sqlite:///./marea.db", validation_alias="DATABASE_URL")
+
+    groq_api_key: str | None = Field(default=None, validation_alias="GROQ_API_KEY")
+    groq_model: str | None = Field(default=None, validation_alias="GROQ_MODEL")
+    openrouter_api_key: str | None = Field(default=None, validation_alias="OPENROUTER_API_KEY")
+    openrouter_model: str | None = Field(default=None, validation_alias="OPENROUTER_MODEL")
+    ollama_base_url: str = Field(default="http://localhost:11434", validation_alias="OLLAMA_BASE_URL")
+    ollama_model: str | None = Field(default=None, validation_alias="OLLAMA_MODEL")
+
+    langsmith_tracing: bool = Field(default=False, validation_alias="LANGSMITH_TRACING")
+    langsmith_api_key: str | None = Field(default=None, validation_alias="LANGSMITH_API_KEY")
+    langsmith_project: str = Field(default="MAREA", validation_alias="LANGSMITH_PROJECT")
+    langsmith_endpoint: str = Field(
+        default="https://api.smith.langchain.com",
+        validation_alias="LANGSMITH_ENDPOINT",
     )
 
     @property

@@ -7,7 +7,7 @@ from app.main import create_app
 
 
 def test_health_check_returns_service_status() -> None:
-    client = TestClient(create_app(Settings()))
+    client = TestClient(create_app(Settings(_env_file=None)))
 
     response = client.get("/health")
 
@@ -25,7 +25,7 @@ def test_settings_read_backend_environment_variables(monkeypatch) -> None:
     monkeypatch.setenv("BACKEND_PORT", "9000")
     monkeypatch.setenv("BACKEND_CORS_ORIGINS", "http://localhost:5173, https://marea.example")
 
-    settings = Settings()
+    settings = Settings(_env_file=None)
 
     assert settings.environment == "test"
     assert settings.host == "0.0.0.0"
