@@ -67,6 +67,25 @@ La configuración del navegador se mantiene separada en `frontend/.env.local`, c
 
 Las variables con prefijo `VITE_` se incluyen en el bundle del navegador y son públicas. Nunca deben contener API keys, credenciales, URLs de base de datos, secretos de sesión ni otra información sensible.
 
+### Groq local (US-008)
+
+El primer proveedor integrado es Groq. Para activarlo localmente, copia `.env.example` a `.env` y configura únicamente en ese archivo privado `LLM_PROVIDER=groq`, `GROQ_MODEL` y `GROQ_API_KEY`. No se versiona la clave ni se expone mediante `VITE_*`.
+
+Para una comprobación manual —no ejecutada por la suite— inicia el backend desde `backend/`:
+
+```powershell
+uv run uvicorn app.main:app --reload
+```
+
+Después, en otra terminal, puede comprobarse el endpoint técnico sin interfaz:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/generation `
+  -ContentType "application/json" -Body '{"prompt":"Escribe un saludo breve."}'
+```
+
+Las pruebas automatizadas no contactan con Groq ni requieren una clave real.
+
 ## Roadmap
 
 | Nivel | Alcance |
