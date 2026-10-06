@@ -9,6 +9,7 @@ from app.core.config import Settings, get_settings
 from app.generation.errors import GenerationUnavailableError
 from app.generation.service import GenerationService
 from app.llm.factory import ProviderConfigurationError, create_llm_provider
+from app.prompts.builder import PromptBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ def get_generation_service(
     """Create the service from private backend configuration."""
 
     try:
-        return GenerationService(create_llm_provider(settings))
+        return GenerationService(create_llm_provider(settings), PromptBuilder())
     except ProviderConfigurationError:
         raise
     except Exception as error:

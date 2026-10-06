@@ -2,12 +2,14 @@
 
 from dataclasses import dataclass
 
+from langchain_core.messages import BaseMessage
+
 
 @dataclass(frozen=True, slots=True)
 class LLMRequest:
-    """A technical request containing a prompt already prepared upstream."""
+    """Provider-agnostic request using LangChain's shared message contract."""
 
-    prompt: str
+    messages: tuple[BaseMessage, ...]
 
 
 @dataclass(frozen=True, slots=True)

@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import BaseMessage
 
 from app.llm.provider import LLMProvider, ProviderInvocationError
 from app.llm.types import LLMRequest, LLMResponse, ProviderMetadata
@@ -30,7 +30,7 @@ class LangChainLLMProvider(LLMProvider):
         """Invoke LangChain and normalize its message content to text."""
 
         try:
-            message = self._model.invoke([HumanMessage(content=request.prompt)])
+            message = self._model.invoke(list(request.messages))
             return LLMResponse(
                 text=_message_content_to_text(message),
                 metadata=self.metadata,
