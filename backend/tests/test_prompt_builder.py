@@ -40,8 +40,17 @@ def test_prompt_builder_includes_structured_context_in_system_and_user_messages(
     assert "Plataforma solicitada: linkedin" in user_message
     assert "Contexto adicional: Incluye un ejemplo breve con tildes: innovación." in user_message
     assert "Audiencia:" in user_message
-    assert result.trace.prompt_version == "v2"
+    assert result.trace.prompt_version == "v3"
     assert result.trace.context == complete_context()
+
+
+def test_prompt_builder_includes_personal_fact_guardrail_instructions() -> None:
+    result = PromptBuilder().build(complete_context())
+
+    system_message = str(result.request.messages[0].content)
+
+    assert "No atribuyas" in system_message
+    assert "testimonios" in system_message
 
 
 def test_prompt_builder_omits_absent_optional_sections_without_rendering_none() -> None:

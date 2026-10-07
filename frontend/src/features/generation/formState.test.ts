@@ -30,12 +30,13 @@ const response: GenerationResponse = {
   provider: 'fake',
   model: 'fake-model',
   trace: {
-    prompt_version: 'v2',
+    prompt_version: 'v3',
     context: {
       topic: 'Tema', objective: 'Informar', audience: 'Audiencia', tone: 'Claro', language: 'es', platform: 'blog',
       niches: [], subniche: null, additional_context: null, profile_context: null,
     },
   },
+  guardrails: { findings: [], review_required: false },
 }
 
 describe('generation form state', () => {

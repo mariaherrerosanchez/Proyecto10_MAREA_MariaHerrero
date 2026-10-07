@@ -42,7 +42,8 @@ describe('MAREA API client', () => {
       text: 'MAREA ayuda a crear contenido.',
       provider: 'groq',
       model: 'model',
-      trace: { prompt_version: 'v2', context: { ...body, subniche: null, additional_context: null, profile_context: null } },
+      trace: { prompt_version: 'v3', context: { ...body, subniche: null, additional_context: null, profile_context: null } },
+      guardrails: { findings: [], review_required: false },
     }
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(generated), { status: 200 }))
 

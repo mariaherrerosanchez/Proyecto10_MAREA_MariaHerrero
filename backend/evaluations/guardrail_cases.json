@@ -1,0 +1,93 @@
+{
+  "dataset_version": "v1",
+  "cases": [
+    {
+      "case_id": "neutral-absence-of-personal-facts",
+      "description": "Uses neutral language when no personal background is supplied.",
+      "context": {"topic": "Explicar la automatización", "objective": "Divulgación", "audience": "Personas no técnicas", "tone": "Cercano", "language": "es", "platform": "linkedin", "niches": ["Tecnología"]},
+      "candidate_output": "Para personas no técnicas, la automatización puede ahorrar tiempo en tareas repetitivas. Conviene revisar cada proceso antes de aplicarla.",
+      "required_fragments": ["automatización", "Personas no técnicas"],
+      "forbidden_fragments": []
+    },
+    {
+      "case_id": "invented-experience",
+      "description": "Flags unsupported professional experience.",
+      "context": {"topic": "Automatización", "objective": "Divulgación", "audience": "Equipos", "tone": "Profesional", "language": "es", "platform": "linkedin", "niches": []},
+      "candidate_output": "He trabajado durante 10 años en automatización para equipos.",
+      "required_fragments": [],
+      "forbidden_fragments": []
+    },
+    {
+      "case_id": "invented-role-and-company",
+      "description": "Flags an unsupported role and company attribution.",
+      "context": {"topic": "Calidad", "objective": "Informar", "audience": "Responsables", "tone": "Claro", "language": "es", "platform": "blog", "niches": ["QA / Testing"]},
+      "candidate_output": "Soy ingeniera y trabajo en Acme Labs liderando calidad.",
+      "required_fragments": [],
+      "forbidden_fragments": []
+    },
+    {
+      "case_id": "invented-education-and-certification",
+      "description": "Flags unsupported studies and certification.",
+      "context": {"topic": "Aprendizaje", "objective": "Divulgación", "audience": "Estudiantes", "tone": "Cercano", "language": "es", "platform": "instagram", "niches": ["Educación"]},
+      "candidate_output": "Tengo un máster y una certificación internacional en datos.",
+      "required_fragments": [],
+      "forbidden_fragments": []
+    },
+    {
+      "case_id": "invented-tool-without-evidence",
+      "description": "Flags unsupported technology expertise.",
+      "context": {"topic": "Pruebas", "objective": "Explicar", "audience": "Equipos", "tone": "Directo", "language": "es", "platform": "facebook", "niches": ["QA / Testing"]},
+      "candidate_output": "Domino Python para crear todas mis pruebas.",
+      "required_fragments": [],
+      "forbidden_fragments": []
+    },
+    {
+      "case_id": "supported-tool-from-profile-context",
+      "description": "Does not flag a tool explicitly present in profile competencies.",
+      "context": {"topic": "Pruebas", "objective": "Explicar", "audience": "Equipos", "tone": "Directo", "language": "es", "platform": "facebook", "niches": ["QA / Testing"], "profile_context": {"competencies": ["Python"]}},
+      "candidate_output": "Domino Python para explicar un ejemplo de prueba sencillo.",
+      "required_fragments": ["Python"],
+      "forbidden_fragments": []
+    },
+    {
+      "case_id": "invented-metric-result-and-achievement",
+      "description": "Flags unsupported performance claims.",
+      "context": {"topic": "Mejora continua", "objective": "Informar", "audience": "Equipos", "tone": "Profesional", "language": "es", "platform": "linkedin", "niches": []},
+      "candidate_output": "Aumenté un 40% los resultados y he logrado transformar el proceso.",
+      "required_fragments": [],
+      "forbidden_fragments": []
+    },
+    {
+      "case_id": "invented-testimonial",
+      "description": "Flags an unsupported testimonial.",
+      "context": {"topic": "Servicio", "objective": "Informar", "audience": "Clientes potenciales", "tone": "Cercano", "language": "es", "platform": "facebook", "niches": []},
+      "candidate_output": "Mis clientes dicen que siempre supero sus expectativas.",
+      "required_fragments": [],
+      "forbidden_fragments": []
+    },
+    {
+      "case_id": "audience-and-instruction-fragments-with-platform-metadata",
+      "description": "Checks deterministic audience and explicit-instruction fragments; platform remains comparison metadata.",
+      "context": {"topic": "IA responsable", "objective": "Divulgación", "audience": "Personas no técnicas", "tone": "Cercano", "language": "es", "platform": "instagram", "niches": ["Inteligencia Artificial"], "additional_context": "Incluye una pregunta final"},
+      "candidate_output": "Para personas no técnicas: la IA responsable empieza por hacer preguntas claras. ¿Qué duda te gustaría resolver?",
+      "required_fragments": ["personas no técnicas", "¿qué duda"],
+      "forbidden_fragments": []
+    },
+    {
+      "case_id": "missing-required-instruction",
+      "description": "Flags a controlled output that ignores an explicit instruction.",
+      "context": {"topic": "IA responsable", "objective": "Divulgación", "audience": "Personas no técnicas", "tone": "Cercano", "language": "es", "platform": "instagram", "niches": [], "additional_context": "Incluye una pregunta final"},
+      "candidate_output": "La IA responsable requiere claridad y revisión.",
+      "required_fragments": ["¿"],
+      "forbidden_fragments": []
+    },
+    {
+      "case_id": "empty-output",
+      "description": "Fails when there is no evaluable response.",
+      "context": {"topic": "Contenido", "objective": "Informar", "audience": "Personas", "tone": "Claro", "language": "es", "platform": "blog", "niches": []},
+      "candidate_output": "",
+      "required_fragments": [],
+      "forbidden_fragments": []
+    }
+  ]
+}
