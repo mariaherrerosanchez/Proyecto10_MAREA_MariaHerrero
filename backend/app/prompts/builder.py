@@ -2,11 +2,17 @@
 
 from dataclasses import dataclass
 
+from langchain_core.messages import SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 
 from app.llm.types import LLMRequest
 from app.prompts.models import GenerationContext, ProfilePromptContext, PromptTrace
-from app.prompts.templates import MAREA_SYSTEM_INSTRUCTIONS, USER_CONTEXT_TEMPLATE
+from app.prompts.platforms import editorial_rules_for
+from app.prompts.templates import (
+    GROUNDING_INSTRUCTIONS,
+    MAREA_GENERAL_INSTRUCTIONS,
+    USER_CONTEXT_TEMPLATE,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,7 +29,8 @@ class PromptBuilder:
     def __init__(self) -> None:
         self._template = ChatPromptTemplate.from_messages(
             [
-                ("system", MAREA_SYSTEM_INSTRUCTIONS),
+                ("system", MAREA_GENERAL_INSTRUCTIONS),
+                ("system", GROUNDING_INSTRUCTIONS),
                 ("human", USER_CONTEXT_TEMPLATE),
             ]
         )
@@ -43,8 +50,12 @@ class PromptBuilder:
                 "profile_sections": _profile_sections(context.profile_context),
             }
         )
+        messages = list(prompt_value.messages)
+        if rules := editorial_rules_for(context.platform):
+            messages.insert(2, SystemMessage(content=rules.instructions))
+
         return PromptBuildResult(
-            request=LLMRequest(messages=tuple(prompt_value.messages)),
+            request=LLMRequest(messages=tuple(messages)),
             trace=PromptTrace(context=context),
         )
 

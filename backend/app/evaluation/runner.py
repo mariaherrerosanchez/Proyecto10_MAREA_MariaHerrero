@@ -26,6 +26,7 @@ def load_evaluation_cases(path: Path = DEFAULT_DATASET_PATH) -> tuple[Evaluation
             candidate_output=item["candidate_output"],
             required_fragments=tuple(item.get("required_fragments", [])),
             forbidden_fragments=tuple(item.get("forbidden_fragments", [])),
+            required_prompt_fragments=tuple(item.get("required_prompt_fragments", [])),
         )
         for item in payload["cases"]
     )
@@ -52,8 +53,10 @@ class EvaluationHarness:
     ) -> EvaluationResult:
         """Evaluate one output against deterministic local rules and expectations."""
 
-        trace = self._prompt_builder.build(case.context).trace
-        reasons = self._reasons(case, output)
+        prompt = self._prompt_builder.build(case.context)
+        trace = prompt.trace
+        prompt_text = "\n".join(str(message.content) for message in prompt.request.messages)
+        reasons = self._reasons(case, output, prompt_text)
         assessment = self._guardrail.assess(output, case.context)
         reasons.extend(f"guardrail:{finding.category}" for finding in assessment.findings)
 
@@ -94,8 +97,9 @@ class EvaluationHarness:
         )
 
     @staticmethod
-    def _reasons(case: EvaluationCase, output: str) -> list[str]:
+    def _reasons(case: EvaluationCase, output: str, prompt_text: str) -> list[str]:
         normalized_output = output.casefold()
+        normalized_prompt = prompt_text.casefold()
         reasons = [
             f"missing_required:{fragment}"
             for fragment in case.required_fragments
@@ -105,5 +109,10 @@ class EvaluationHarness:
             f"forbidden_fragment:{fragment}"
             for fragment in case.forbidden_fragments
             if fragment.casefold() in normalized_output
+        )
+        reasons.extend(
+            f"missing_prompt_instruction:{fragment}"
+            for fragment in case.required_prompt_fragments
+            if fragment.casefold() not in normalized_prompt
         )
         return reasons

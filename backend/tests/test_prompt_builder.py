@@ -31,8 +31,11 @@ def test_prompt_builder_includes_structured_context_in_system_and_user_messages(
     result = PromptBuilder().build(complete_context())
 
     assert isinstance(result.request.messages[0], SystemMessage)
-    assert isinstance(result.request.messages[1], HumanMessage)
-    user_message = str(result.request.messages[1].content)
+    assert isinstance(result.request.messages[1], SystemMessage)
+    assert isinstance(result.request.messages[2], SystemMessage)
+    assert isinstance(result.request.messages[3], HumanMessage)
+    linkedin_instructions = str(result.request.messages[2].content)
+    user_message = str(result.request.messages[3].content)
     assert "Tema: Cómo explicar IA sin tecnicismos" in user_message
     assert "Nichos de la solicitud:\n- Inteligencia Artificial\n- QA / Testing" in user_message
     assert "Subnicho o especialización adicional: Inteligencia Artificial" in user_message
@@ -40,14 +43,21 @@ def test_prompt_builder_includes_structured_context_in_system_and_user_messages(
     assert "Plataforma solicitada: linkedin" in user_message
     assert "Contexto adicional: Incluye un ejemplo breve con tildes: innovación." in user_message
     assert "Audiencia:" in user_message
-    assert result.trace.prompt_version == "v3"
+    assert "Instrucciones editoriales para LinkedIn" in linkedin_instructions
+    assert "clickbait artificial" in linkedin_instructions
+    assert "engagement bait" in linkedin_instructions
+    assert result.trace.prompt_version == "v4"
     assert result.trace.context == complete_context()
 
 
 def test_prompt_builder_includes_personal_fact_guardrail_instructions() -> None:
     result = PromptBuilder().build(complete_context())
 
-    system_message = str(result.request.messages[0].content)
+    system_message = "\n".join(
+        str(message.content)
+        for message in result.request.messages
+        if isinstance(message, SystemMessage)
+    )
 
     assert "No atribuyas" in system_message
     assert "testimonios" in system_message
@@ -67,7 +77,7 @@ def test_prompt_builder_omits_absent_optional_sections_without_rendering_none() 
     )
 
     result = PromptBuilder().build(context)
-    user_message = str(result.request.messages[1].content)
+    user_message = str(result.request.messages[-1].content)
 
     assert "Subnicho:" not in user_message
     assert "Contexto adicional:" not in user_message
@@ -88,7 +98,7 @@ def test_prompt_builder_omits_empty_request_niches_but_preserves_audience_and_su
     )
 
     result = PromptBuilder().build(context)
-    user_message = str(result.request.messages[1].content)
+    user_message = str(result.request.messages[-1].content)
 
     assert "Nichos de la solicitud:" not in user_message
     assert "[]" not in user_message
@@ -120,18 +130,31 @@ def test_subniche_is_an_optional_specialization_for_any_number_of_niches(
     )
 
     result = PromptBuilder().build(context)
-    user_message = str(result.request.messages[1].content)
+    user_message = str(result.request.messages[-1].content)
 
     assert f"Subnicho o especialización adicional: {subniche}" in user_message
 
 
 def test_profile_context_extends_prompt_without_changing_base_fields() -> None:
     result = PromptBuilder().build(complete_context())
-    user_message = str(result.request.messages[1].content)
+    user_message = str(result.request.messages[-1].content)
 
     assert "Instrucciones del perfil:\n- Evita jerga innecesaria." in user_message
     assert "Nichos del perfil:\n- Tecnología\n- IA responsable" in user_message
     assert "Competencias del perfil:\n- Divulgación\n- Transformación digital" in user_message
+
+
+def test_prompt_builder_does_not_apply_linkedin_rules_to_another_platform() -> None:
+    context = complete_context().model_copy(update={"platform": "blog"})
+
+    result = PromptBuilder().build(context)
+
+    assert len(result.request.messages) == 3
+    assert "No atribuyas" in str(result.request.messages[1].content)
+    assert all(
+        "Instrucciones editoriales para LinkedIn" not in str(message.content)
+        for message in result.request.messages
+    )
 
 
 @pytest.mark.parametrize(
