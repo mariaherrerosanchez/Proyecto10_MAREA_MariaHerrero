@@ -42,6 +42,7 @@ describe('MAREA API client', () => {
       text: 'MAREA ayuda a crear contenido.',
       provider: 'groq',
       model: 'model',
+      processing_location: 'external' as const,
       trace: { prompt_version: 'v3', context: { ...body, subniche: null, additional_context: null, profile_context: null } },
       guardrails: { findings: [], review_required: false },
     }

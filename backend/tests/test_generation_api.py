@@ -14,7 +14,9 @@ from app.prompts.builder import PromptBuilder
 class SuccessfulProvider:
     """Fake provider returning a deterministic generated result."""
 
-    metadata = ProviderMetadata(provider="groq", model="configured-model")
+    metadata = ProviderMetadata(
+        provider="groq", model="configured-model", processing_location="external"
+    )
 
     def generate(self, _request: LLMRequest) -> LLMResponse:
         return LLMResponse(text="Texto generado", metadata=self.metadata)
@@ -23,7 +25,9 @@ class SuccessfulProvider:
 class FailingProvider:
     """Fake provider that simulates a sensitive upstream failure."""
 
-    metadata = ProviderMetadata(provider="groq", model="configured-model")
+    metadata = ProviderMetadata(
+        provider="groq", model="configured-model", processing_location="external"
+    )
 
     def generate(self, _request: LLMRequest) -> LLMResponse:
         original_error = RuntimeError("secret-that-must-not-reach-the-client")
@@ -56,6 +60,7 @@ def test_generation_endpoint_returns_text_and_provider_metadata() -> None:
         "text": "Texto generado",
         "provider": "groq",
         "model": "configured-model",
+        "processing_location": "external",
         "trace": {
             "prompt_version": "v3",
             "context": valid_request_body()

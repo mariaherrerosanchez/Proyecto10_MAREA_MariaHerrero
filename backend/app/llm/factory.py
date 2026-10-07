@@ -5,7 +5,7 @@ from enum import StrEnum
 
 from app.core.config import Settings
 from app.llm.provider import LLMProvider
-from app.llm.types import ProviderMetadata
+from app.llm.types import ProcessingLocation, ProviderMetadata
 
 
 class SupportedProvider(StrEnum):
@@ -52,7 +52,11 @@ def resolve_provider_configuration(settings: Settings) -> ResolvedProviderConfig
 
     return ResolvedProviderConfiguration(
         provider=provider,
-        metadata=ProviderMetadata(provider=provider.value, model=model),
+        metadata=ProviderMetadata(
+            provider=provider.value,
+            model=model,
+            processing_location=_processing_location_for(provider),
+        ),
     )
 
 
@@ -82,3 +86,9 @@ def _resolve_provider_name(value: str | None) -> SupportedProvider:
         raise UnsupportedProviderError(
             f"Unsupported LLM provider '{value}'."
         ) from error
+
+
+def _processing_location_for(provider: SupportedProvider) -> ProcessingLocation:
+    """Expose where processing occurs from the backend's provider configuration."""
+
+    return "local" if provider is SupportedProvider.OLLAMA else "external"

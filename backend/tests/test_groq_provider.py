@@ -42,6 +42,7 @@ def test_groq_provider_uses_model_and_key_from_private_settings(monkeypatch) -> 
     assert response.metadata == ProviderMetadata(
         provider="groq",
         model="configured-model",
+        processing_location="external",
     )
     assert FakeChatGroq.last_created_with == {
         "model": "configured-model",

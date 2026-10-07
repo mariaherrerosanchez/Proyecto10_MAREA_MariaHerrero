@@ -33,10 +33,13 @@ export type GuardrailAssessment = {
   review_required: boolean
 }
 
+export type ProcessingLocation = 'local' | 'external'
+
 export type GenerationResponse = {
   text: string
   provider: string
   model: string
+  processing_location: ProcessingLocation
   trace: GenerationTrace
   guardrails: GuardrailAssessment
 }

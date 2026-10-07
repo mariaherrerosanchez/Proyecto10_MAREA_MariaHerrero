@@ -21,7 +21,9 @@ from app.llm.types import LLMRequest, LLMResponse, ProviderMetadata
 class FakeProvider:
     """Minimal implementation used to verify the common provider contract."""
 
-    metadata = ProviderMetadata(provider="fake", model="fake-model")
+    metadata = ProviderMetadata(
+        provider="fake", model="fake-model", processing_location="external"
+    )
 
     def generate(self, request: LLMRequest) -> LLMResponse:
         return LLMResponse(text=str(request.messages[0].content), metadata=self.metadata)
@@ -37,7 +39,9 @@ def test_common_provider_contract_is_runtime_checkable() -> None:
 def test_langchain_provider_invokes_injected_model_and_normalizes_response() -> None:
     model = Mock(spec=BaseChatModel)
     model.invoke.return_value = AIMessage(content=[{"text": "Hola "}, "MAREA"])
-    metadata = ProviderMetadata(provider="groq", model="llama-test")
+    metadata = ProviderMetadata(
+        provider="groq", model="llama-test", processing_location="external"
+    )
     provider = LangChainLLMProvider(model=model, metadata=metadata)
 
     response = provider.generate(LLMRequest(messages=(HumanMessage(content="Prompt de prueba"),)))
@@ -62,7 +66,26 @@ def test_factory_resolves_selected_provider_and_its_model() -> None:
     assert resolved.metadata == ProviderMetadata(
         provider="openrouter",
         model="openrouter/test-model",
+        processing_location="external",
     )
+
+
+@pytest.mark.parametrize(
+    ("provider", "model_field", "expected_location"),
+    [
+        ("groq", "GROQ_MODEL", "external"),
+        ("openrouter", "OPENROUTER_MODEL", "external"),
+        ("ollama", "OLLAMA_MODEL", "local"),
+    ],
+)
+def test_factory_exposes_processing_location_from_provider_configuration(
+    provider: str, model_field: str, expected_location: str
+) -> None:
+    resolved = resolve_provider_configuration(
+        Settings(_env_file=None, LLM_PROVIDER=provider, **{model_field: "test-model"})
+    )
+
+    assert resolved.metadata.processing_location == expected_location
 
 
 @pytest.mark.parametrize("provider", [None, "", "unsupported-provider"])
@@ -89,7 +112,9 @@ def test_provider_failure_is_safe_traceable_and_preserves_original_cause(caplog)
     original_error = RuntimeError(f"upstream failure: {prompt}; {secret}")
     model = Mock(spec=BaseChatModel)
     model.invoke.side_effect = original_error
-    metadata = ProviderMetadata(provider="groq", model="llama-test")
+    metadata = ProviderMetadata(
+        provider="groq", model="llama-test", processing_location="external"
+    )
     provider = LangChainLLMProvider(model=model, metadata=metadata)
 
     with caplog.at_level(logging.ERROR, logger="app.llm.langchain_provider"):
