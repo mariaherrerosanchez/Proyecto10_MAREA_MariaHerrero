@@ -18,6 +18,7 @@ class EvaluationCase:
     candidate_output: str
     required_fragments: tuple[str, ...]
     forbidden_fragments: tuple[str, ...]
+    required_prompt_fragments: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)

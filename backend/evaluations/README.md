@@ -2,7 +2,7 @@
 
 `guardrail_cases.json` es un dataset sintético y versionado. Cada caso aporta un
 contexto de generación, una salida controlada y comprobaciones deterministas de
-fragmentos obligatorios o prohibidos. No debe contener datos personales reales.
+fragmentos obligatorios, prohibidos o de instrucciones presentes en el prompt. No debe contener datos personales reales.
 
 ## Harness y tests
 
@@ -22,9 +22,9 @@ señales locales; `flag` necesita revisión humana; `fail` indica que no hay sal
 evaluable. Ninguno sustituye la revisión humana.
 
 El harness comprueba reglas de guardrails y expectativas sintéticas de fragmentos.
-Conserva `platform` como metadato para comparar ejecuciones futuras, pero no evalúa
-semánticamente el tono ni la adaptación editorial por plataforma: esos aspectos
-siguen requiriendo revisión humana y pertenecen a historias posteriores.
+Puede comprobar que una instrucción editorial está presente en el prompt construido,
+pero no evalúa semánticamente el tono ni la calidad de adaptación por plataforma:
+esos aspectos siguen requiriendo revisión humana.
 
 Para evaluar con el proveedor configurado hay que activar explícitamente la red:
 
