@@ -31,7 +31,7 @@ const response: GenerationResponse = {
   model: 'fake-model',
   processing_location: 'external',
   trace: {
-    prompt_version: 'v5',
+    prompt_version: 'v6',
     context: {
       topic: 'Tema', objective: 'Informar', audience: 'Audiencia', tone: 'Claro', language: 'es', platform: 'blog',
       niches: [], subniche: null, additional_context: null, profile_context: null,
