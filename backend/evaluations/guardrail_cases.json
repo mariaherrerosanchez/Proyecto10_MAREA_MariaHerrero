@@ -20,6 +20,15 @@
       "required_prompt_fragments": ["Instrucciones editoriales para Instagram", "publicación social visual", "bloques artificiales o spam"]
     },
     {
+      "case_id": "facebook-editorial-instructions",
+      "description": "Checks that deterministic Facebook editorial guidance is included in the constructed prompt; it does not judge editorial quality.",
+      "context": {"topic": "Aclarar una idea", "objective": "Divulgación", "audience": "Personas interesadas", "tone": "Cercano", "language": "es", "platform": "facebook", "niches": ["Educación"]},
+      "candidate_output": "Una idea clara se entiende mejor con el contexto adecuado.",
+      "required_fragments": [],
+      "forbidden_fragments": [],
+      "required_prompt_fragments": ["Instrucciones editoriales para Facebook", "dentro del feed", "pocos hashtags relevantes"]
+    },
+    {
       "case_id": "neutral-absence-of-personal-facts",
       "description": "Uses neutral language when no personal background is supplied.",
       "context": {"topic": "Explicar la automatización", "objective": "Divulgación", "audience": "Personas no técnicas", "tone": "Cercano", "language": "es", "platform": "linkedin", "niches": ["Tecnología"]},

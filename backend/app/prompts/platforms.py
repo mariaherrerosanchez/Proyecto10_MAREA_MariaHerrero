@@ -35,6 +35,18 @@ _RULES_BY_PLATFORM: dict[str, PlatformEditorialRules] = {
 - Evita engagement bait y lenguaje corporativo vacío.
 - No presentes como propios hechos personales, profesionales, empresariales, métricas o logros no respaldados por el contexto.""",
     ),
+    "facebook": PlatformEditorialRules(
+        platform="facebook",
+        instructions="""Instrucciones editoriales para Facebook:
+- Escribe un texto natural, claro y conversacional, comprensible y cercano sin asumir un tono informal.
+- Introduce el tema pronto, sin clickbait artificial, y desarrolla un mensaje principal claro con suficiente contexto para entenderlo dentro del feed.
+- Favorece una estructura fácil de leer y párrafos razonablemente breves, sin fórmulas rígidas o repetitivas.
+- Propón una llamada a la acción solo cuando resulte útil y natural; no uses preguntas artificiales para provocar comentarios.
+- Usa pocos hashtags relevantes solo cuando aporten valor.
+- Usa emojis de forma opcional y moderada, únicamente si encajan con el tono solicitado.
+- Evita engagement bait, lenguaje corporativo vacío y lenguaje promocional.
+- No presentes como propios hechos personales, profesionales, empresariales, estudios, herramientas, métricas, resultados, logros o testimonios no respaldados por el contexto.""",
+    ),
 }
 
 

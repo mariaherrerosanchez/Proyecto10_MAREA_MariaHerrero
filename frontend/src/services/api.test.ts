@@ -43,7 +43,7 @@ describe('MAREA API client', () => {
       provider: 'groq',
       model: 'model',
       processing_location: 'external' as const,
-      trace: { prompt_version: 'v5', context: { ...body, subniche: null, additional_context: null, profile_context: null } },
+      trace: { prompt_version: 'v6', context: { ...body, subniche: null, additional_context: null, profile_context: null } },
       guardrails: { findings: [], review_required: false },
     }
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(generated), { status: 200 }))

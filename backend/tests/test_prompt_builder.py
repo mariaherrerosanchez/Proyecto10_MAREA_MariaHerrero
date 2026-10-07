@@ -47,7 +47,8 @@ def test_prompt_builder_includes_structured_context_in_system_and_user_messages(
     assert "clickbait artificial" in linkedin_instructions
     assert "engagement bait" in linkedin_instructions
     assert "Instrucciones editoriales para Instagram" not in linkedin_instructions
-    assert result.trace.prompt_version == "v5"
+    assert "Instrucciones editoriales para Facebook" not in linkedin_instructions
+    assert result.trace.prompt_version == "v6"
     assert result.trace.context == complete_context()
 
 
@@ -156,6 +157,22 @@ def test_prompt_builder_applies_distinct_instagram_rules() -> None:
     assert "publicación social visual" in instagram_instructions
     assert "bloques artificiales o spam" in instagram_instructions
     assert "Instrucciones editoriales para LinkedIn" not in instagram_instructions
+    assert "Instrucciones editoriales para Facebook" not in instagram_instructions
+    assert "No atribuyas" in str(result.request.messages[1].content)
+
+
+def test_prompt_builder_applies_distinct_facebook_rules() -> None:
+    context = complete_context().model_copy(update={"platform": "facebook"})
+
+    result = PromptBuilder().build(context)
+
+    assert len(result.request.messages) == 4
+    facebook_instructions = str(result.request.messages[2].content)
+    assert "Instrucciones editoriales para Facebook" in facebook_instructions
+    assert "dentro del feed" in facebook_instructions
+    assert "pocos hashtags relevantes" in facebook_instructions
+    assert "Instrucciones editoriales para LinkedIn" not in facebook_instructions
+    assert "Instrucciones editoriales para Instagram" not in facebook_instructions
     assert "No atribuyas" in str(result.request.messages[1].content)
 
 
@@ -169,6 +186,7 @@ def test_prompt_builder_keeps_general_behavior_for_a_platform_without_rules() ->
     assert all(
         "Instrucciones editoriales para LinkedIn" not in str(message.content)
         and "Instrucciones editoriales para Instagram" not in str(message.content)
+        and "Instrucciones editoriales para Facebook" not in str(message.content)
         for message in result.request.messages
     )
 
