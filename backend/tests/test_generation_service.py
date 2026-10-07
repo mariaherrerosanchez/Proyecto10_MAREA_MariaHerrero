@@ -9,7 +9,9 @@ from app.prompts.models import GenerationContext
 class RecordingProvider:
     """Fake provider proving the service only needs the common contract."""
 
-    metadata = ProviderMetadata(provider="fake", model="fake-model")
+    metadata = ProviderMetadata(
+        provider="fake", model="fake-model", processing_location="external"
+    )
 
     def __init__(self) -> None:
         self.requests: list[LLMRequest] = []
@@ -39,7 +41,9 @@ def test_generation_service_depends_only_on_the_provider_contract() -> None:
     assert len(provider.requests[0].messages) == 2
     assert result.response == LLMResponse(
         text="Generated text",
-        metadata=ProviderMetadata(provider="fake", model="fake-model"),
+        metadata=ProviderMetadata(
+            provider="fake", model="fake-model", processing_location="external"
+        ),
     )
     assert result.trace.prompt_version == "v3"
     assert result.guardrails.review_required is False

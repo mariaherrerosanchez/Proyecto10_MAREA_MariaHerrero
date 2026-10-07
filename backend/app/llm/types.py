@@ -1,8 +1,12 @@
 """Provider-agnostic data contracts for LLM invocation."""
 
 from dataclasses import dataclass
+from typing import Literal
 
 from langchain_core.messages import BaseMessage
+
+
+ProcessingLocation = Literal["local", "external"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,6 +22,7 @@ class ProviderMetadata:
 
     provider: str
     model: str
+    processing_location: ProcessingLocation
 
 
 @dataclass(frozen=True, slots=True)

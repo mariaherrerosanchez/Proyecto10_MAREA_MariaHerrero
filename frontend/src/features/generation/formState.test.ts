@@ -29,6 +29,7 @@ const response: GenerationResponse = {
   text: 'Borrador',
   provider: 'fake',
   model: 'fake-model',
+  processing_location: 'external',
   trace: {
     prompt_version: 'v3',
     context: {

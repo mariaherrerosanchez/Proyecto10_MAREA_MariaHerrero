@@ -1,7 +1,7 @@
 """Technical HTTP boundary for the first configured LLM."""
 
 import logging
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -24,6 +24,7 @@ class GenerationResponseBody(BaseModel):
     text: str
     provider: str
     model: str
+    processing_location: Literal["local", "external"]
     trace: PromptTrace
     guardrails: GuardrailAssessment
 
@@ -50,6 +51,7 @@ def generate_text(
         text=result.response.text,
         provider=result.response.metadata.provider,
         model=result.response.metadata.model,
+        processing_location=result.response.metadata.processing_location,
         trace=result.trace,
         guardrails=result.guardrails,
     )
