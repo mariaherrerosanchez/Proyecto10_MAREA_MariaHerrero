@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from app.api.dependencies import get_generation_service
 from app.generation.errors import GenerationUnavailableError
 from app.generation.service import GenerationService
+from app.guardrails.personal_facts import GuardrailAssessment
 from app.llm.provider import ProviderInvocationError
 from app.prompts.models import GenerationContext, PromptTrace
 
@@ -24,6 +25,7 @@ class GenerationResponseBody(BaseModel):
     provider: str
     model: str
     trace: PromptTrace
+    guardrails: GuardrailAssessment
 
 
 @router.post("", response_model=GenerationResponseBody)
@@ -49,4 +51,5 @@ def generate_text(
         provider=result.response.metadata.provider,
         model=result.response.metadata.model,
         trace=result.trace,
+        guardrails=result.guardrails,
     )

@@ -23,11 +23,22 @@ export type GenerationTrace = {
   }
 }
 
+export type GuardrailFinding = {
+  category: string
+  reason: string
+}
+
+export type GuardrailAssessment = {
+  findings: GuardrailFinding[]
+  review_required: boolean
+}
+
 export type GenerationResponse = {
   text: string
   provider: string
   model: string
   trace: GenerationTrace
+  guardrails: GuardrailAssessment
 }
 
 export type GenerationFormValues = {

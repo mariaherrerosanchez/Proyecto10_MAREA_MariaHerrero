@@ -57,13 +57,17 @@ def test_generation_endpoint_returns_text_and_provider_metadata() -> None:
         "provider": "groq",
         "model": "configured-model",
         "trace": {
-            "prompt_version": "v2",
+            "prompt_version": "v3",
             "context": valid_request_body()
             | {
                 "subniche": None,
                 "additional_context": None,
                 "profile_context": None,
             },
+        },
+        "guardrails": {
+            "findings": [],
+            "review_required": False,
         },
     }
 

@@ -41,4 +41,31 @@ def test_generation_service_depends_only_on_the_provider_contract() -> None:
         text="Generated text",
         metadata=ProviderMetadata(provider="fake", model="fake-model"),
     )
-    assert result.trace.prompt_version == "v2"
+    assert result.trace.prompt_version == "v3"
+    assert result.guardrails.review_required is False
+
+
+def test_generation_service_flags_unsupported_personal_claims() -> None:
+    class UnsupportedClaimProvider(RecordingProvider):
+        def generate(self, request: LLMRequest) -> LLMResponse:
+            self.requests.append(request)
+            return LLMResponse(
+                text="He trabajado durante 10 años en automatización.",
+                metadata=self.metadata,
+            )
+
+    service = GenerationService(UnsupportedClaimProvider(), PromptBuilder())
+
+    result = service.generate(
+        GenerationContext(
+            topic="Automatización",
+            objective="Divulgación",
+            audience="Personas no técnicas",
+            tone="Cercano",
+            language="es",
+            platform="linkedin",
+        )
+    )
+
+    assert result.guardrails.review_required is True
+    assert result.guardrails.findings[0].category == "experience"

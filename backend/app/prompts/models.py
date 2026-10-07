@@ -45,5 +45,5 @@ class GenerationContext(BaseModel):
 class PromptTrace(BaseModel):
     """Transient configuration snapshot until trace persistence is implemented."""
 
-    prompt_version: Literal["v2"] = "v2"
+    prompt_version: Literal["v3"] = "v3"
     context: GenerationContext
