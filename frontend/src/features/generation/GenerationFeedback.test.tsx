@@ -16,7 +16,7 @@ describe('GenerationFeedback', () => {
             model: 'modelo',
             processing_location: undefined,
             trace: {
-              prompt_version: 'v4',
+              prompt_version: 'v5',
               context: {
                 topic: 'Tema',
                 objective: 'Informar',
