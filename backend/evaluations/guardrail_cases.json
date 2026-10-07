@@ -11,6 +11,15 @@
       "required_prompt_fragments": ["Instrucciones editoriales para LinkedIn", "clickbait artificial", "engagement bait"]
     },
     {
+      "case_id": "instagram-editorial-instructions",
+      "description": "Checks that deterministic Instagram editorial guidance is included in the constructed prompt; it does not judge copy quality.",
+      "context": {"topic": "Compartir una idea", "objective": "Divulgación", "audience": "Personas interesadas", "tone": "Cercano", "language": "es", "platform": "instagram", "niches": ["Educación"]},
+      "candidate_output": "Una idea clara puede ser un buen punto de partida.",
+      "required_fragments": [],
+      "forbidden_fragments": [],
+      "required_prompt_fragments": ["Instrucciones editoriales para Instagram", "publicación social visual", "bloques artificiales o spam"]
+    },
+    {
       "case_id": "neutral-absence-of-personal-facts",
       "description": "Uses neutral language when no personal background is supplied.",
       "context": {"topic": "Explicar la automatización", "objective": "Divulgación", "audience": "Personas no técnicas", "tone": "Cercano", "language": "es", "platform": "linkedin", "niches": ["Tecnología"]},

@@ -22,7 +22,7 @@ señales locales; `flag` necesita revisión humana; `fail` indica que no hay sal
 evaluable. Ninguno sustituye la revisión humana.
 
 El harness comprueba reglas de guardrails y expectativas sintéticas de fragmentos.
-Puede comprobar que una instrucción editorial está presente en el prompt construido,
+Puede comprobar que instrucciones editoriales concretas están presentes en el prompt construido,
 pero no evalúa semánticamente el tono ni la calidad de adaptación por plataforma:
 esos aspectos siguen requiriendo revisión humana.
 

@@ -46,7 +46,8 @@ def test_prompt_builder_includes_structured_context_in_system_and_user_messages(
     assert "Instrucciones editoriales para LinkedIn" in linkedin_instructions
     assert "clickbait artificial" in linkedin_instructions
     assert "engagement bait" in linkedin_instructions
-    assert result.trace.prompt_version == "v4"
+    assert "Instrucciones editoriales para Instagram" not in linkedin_instructions
+    assert result.trace.prompt_version == "v5"
     assert result.trace.context == complete_context()
 
 
@@ -144,7 +145,21 @@ def test_profile_context_extends_prompt_without_changing_base_fields() -> None:
     assert "Competencias del perfil:\n- Divulgación\n- Transformación digital" in user_message
 
 
-def test_prompt_builder_does_not_apply_linkedin_rules_to_another_platform() -> None:
+def test_prompt_builder_applies_distinct_instagram_rules() -> None:
+    context = complete_context().model_copy(update={"platform": "instagram"})
+
+    result = PromptBuilder().build(context)
+
+    assert len(result.request.messages) == 4
+    instagram_instructions = str(result.request.messages[2].content)
+    assert "Instrucciones editoriales para Instagram" in instagram_instructions
+    assert "publicación social visual" in instagram_instructions
+    assert "bloques artificiales o spam" in instagram_instructions
+    assert "Instrucciones editoriales para LinkedIn" not in instagram_instructions
+    assert "No atribuyas" in str(result.request.messages[1].content)
+
+
+def test_prompt_builder_keeps_general_behavior_for_a_platform_without_rules() -> None:
     context = complete_context().model_copy(update={"platform": "blog"})
 
     result = PromptBuilder().build(context)
@@ -153,6 +168,7 @@ def test_prompt_builder_does_not_apply_linkedin_rules_to_another_platform() -> N
     assert "No atribuyas" in str(result.request.messages[1].content)
     assert all(
         "Instrucciones editoriales para LinkedIn" not in str(message.content)
+        and "Instrucciones editoriales para Instagram" not in str(message.content)
         for message in result.request.messages
     )
 

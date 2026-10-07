@@ -45,7 +45,7 @@ def test_generation_service_depends_only_on_the_provider_contract() -> None:
             provider="fake", model="fake-model", processing_location="external"
         ),
     )
-    assert result.trace.prompt_version == "v4"
+    assert result.trace.prompt_version == "v5"
     assert result.guardrails.review_required is False
 
 

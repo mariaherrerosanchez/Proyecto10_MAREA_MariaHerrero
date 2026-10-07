@@ -7,17 +7,33 @@ def test_controlled_evaluation_dataset_is_versioned_and_reproducible() -> None:
     cases = load_evaluation_cases()
     results = EvaluationHarness().evaluate_controlled_cases(cases)
 
-    assert len(cases) == 12
+    assert len(cases) == 13
     assert [result.case_id for result in results] == [case.case_id for case in cases]
     assert {result.status for result in results} == {"pass", "flag", "fail"}
     assert all(result.provider == "controlled-fixture" for result in results)
     assert all(result.model == "not-invoked" for result in results)
-    assert all(result.prompt_version == "v4" for result in results)
+    assert all(result.prompt_version == "v5" for result in results)
 
 
 def test_controlled_evaluation_checks_linkedin_prompt_instructions() -> None:
     case = next(
         item for item in load_evaluation_cases() if item.case_id == "linkedin-editorial-instructions"
+    )
+
+    result = EvaluationHarness().evaluate(
+        case,
+        case.candidate_output,
+        provider="controlled-fixture",
+        model="not-invoked",
+    )
+
+    assert result.status == "pass"
+    assert result.review_required is False
+
+
+def test_controlled_evaluation_checks_instagram_prompt_instructions() -> None:
+    case = next(
+        item for item in load_evaluation_cases() if item.case_id == "instagram-editorial-instructions"
     )
 
     result = EvaluationHarness().evaluate(
