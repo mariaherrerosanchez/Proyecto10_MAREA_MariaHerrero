@@ -1,6 +1,7 @@
 """Tests for the technical generation HTTP boundary."""
 
 from fastapi.testclient import TestClient
+import pytest
 
 from app.api.dependencies import get_generation_service
 from app.core.config import Settings
@@ -34,6 +35,17 @@ class FailingProvider:
         raise ProviderInvocationError(self.metadata) from original_error
 
 
+class PartiallyFailingProvider(SuccessfulProvider):
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def generate(self, request: LLMRequest) -> LLMResponse:
+        self.calls += 1
+        if self.calls == 2:
+            raise ProviderInvocationError(self.metadata) from RuntimeError("provider-secret")
+        return super().generate(request)
+
+
 def valid_request_body() -> dict[str, object]:
     return {
         "topic": "Explicar qué es MAREA",
@@ -44,6 +56,12 @@ def valid_request_body() -> dict[str, object]:
         "language": "es",
         "platform": "linkedin",
     }
+
+
+def valid_multichannel_request_body() -> dict[str, object]:
+    request = valid_request_body()
+    request.pop("platform")
+    return request | {"platforms": ["linkedin", "instagram", "facebook"]}
 
 
 def test_generation_endpoint_returns_text_and_provider_metadata() -> None:
@@ -151,5 +169,85 @@ def test_generation_endpoint_rejects_the_replaced_singular_niche_field() -> None
     request_body = valid_request_body() | {"niche": "Tecnología"}
 
     response = client.post("/generation", json=request_body)
+
+    assert response.status_code == 422
+
+
+def test_multichannel_endpoint_returns_one_independent_result_per_platform() -> None:
+    provider = SuccessfulProvider()
+    application = create_app(Settings(_env_file=None))
+    application.dependency_overrides[get_generation_service] = lambda: GenerationService(
+        provider, PromptBuilder()
+    )
+    client = TestClient(application)
+
+    response = client.post("/generation/multichannel", json=valid_multichannel_request_body())
+
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert [result["platform"] for result in results] == ["linkedin", "instagram", "facebook"]
+    assert [result["status"] for result in results] == ["success", "success", "success"]
+    assert [result["generation"]["trace"]["context"]["platform"] for result in results] == [
+        "linkedin",
+        "instagram",
+        "facebook",
+    ]
+
+
+def test_multichannel_endpoint_continues_after_a_provider_failure_without_leaking_details() -> None:
+    provider = PartiallyFailingProvider()
+    application = create_app(Settings(_env_file=None))
+    application.dependency_overrides[get_generation_service] = lambda: GenerationService(
+        provider, PromptBuilder()
+    )
+    client = TestClient(application)
+
+    response = client.post("/generation/multichannel", json=valid_multichannel_request_body())
+
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert [result["status"] for result in results] == ["success", "error", "success"]
+    assert results[1]["error"] == {
+        "code": "provider_request_failed",
+        "detail": "No se ha podido generar el texto en este momento. Inténtalo de nuevo.",
+    }
+    assert "provider-secret" not in response.text
+
+
+def test_multichannel_endpoint_returns_structured_failures_when_every_provider_call_fails() -> None:
+    application = create_app(Settings(_env_file=None))
+    application.dependency_overrides[get_generation_service] = lambda: GenerationService(
+        FailingProvider(), PromptBuilder()
+    )
+    client = TestClient(application)
+
+    response = client.post("/generation/multichannel", json=valid_multichannel_request_body())
+
+    assert response.status_code == 200
+    assert [result["status"] for result in response.json()["results"]] == [
+        "error",
+        "error",
+        "error",
+    ]
+    assert "secret-that-must-not-reach-the-client" not in response.text
+
+
+@pytest.mark.parametrize(
+    "platforms",
+    [[], ["linkedin", "linkedin"], ["linkedin", "unknown"]],
+)
+def test_multichannel_endpoint_rejects_empty_duplicate_or_invalid_platforms(
+    platforms: list[str],
+) -> None:
+    application = create_app(Settings(_env_file=None))
+    application.dependency_overrides[get_generation_service] = lambda: GenerationService(
+        SuccessfulProvider(), PromptBuilder()
+    )
+    client = TestClient(application)
+
+    response = client.post(
+        "/generation/multichannel",
+        json=valid_multichannel_request_body() | {"platforms": platforms},
+    )
 
     assert response.status_code == 422

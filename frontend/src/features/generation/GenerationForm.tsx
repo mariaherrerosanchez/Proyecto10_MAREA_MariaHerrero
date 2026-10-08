@@ -16,6 +16,7 @@ export function GenerationForm() {
     removeSelectedNiche,
     toggleSuggestedNiche,
     togglePlatform,
+    selectAll,
     setActivePlatform,
     submit,
   } = useGenerationForm()
@@ -93,16 +94,17 @@ export function GenerationForm() {
         activePlatform={values.activePlatform}
         error={errors.platforms}
         onActivePlatformChange={setActivePlatform}
+        onSelectAll={selectAll}
         onTogglePlatform={togglePlatform}
         selectedPlatforms={values.selectedPlatforms}
       />
       <div className="generation-form__submit">
         <button className="button button--primary" disabled={isLoading} type="submit">
-          {isLoading ? 'Generando borrador…' : 'Generar borrador'}
+          {isLoading ? 'Generando borradores…' : 'Generar borradores'}
         </button>
-        <p>Se generará un único borrador para la plataforma principal. Podrás revisarlo antes de utilizarlo.</p>
+        <p>Generaremos una pieza por plataforma seleccionada. Podrás revisarlas antes de utilizarlas.</p>
       </div>
-      <GenerationFeedback generation={generation} />
+      <GenerationFeedback generation={generation} initialPlatform={values.activePlatform} />
     </form>
   )
 }
