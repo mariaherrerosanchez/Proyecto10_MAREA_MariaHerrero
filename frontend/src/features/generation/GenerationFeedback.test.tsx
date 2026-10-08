@@ -66,6 +66,9 @@ describe('GenerationFeedback', () => {
     expect(markup).toContain('Editar borrador')
     expect(markup).toContain('Confirmar revisión')
     expect(markup).toContain('Regenerar borrador')
+    expect(markup).toContain('Copiar texto')
+    expect(markup).toContain('Descargar .txt')
+    expect(markup).toContain('Confirma la revisión para habilitar la copia y la descarga.')
     expect(markup).not.toContain('Publicar')
   })
 
