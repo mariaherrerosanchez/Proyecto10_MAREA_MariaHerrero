@@ -14,6 +14,10 @@ export type GenerationRequest = {
   additional_context?: string
 }
 
+export type MultichannelGenerationRequest = Omit<GenerationRequest, 'platform'> & {
+  platforms: Platform[]
+}
+
 export type GenerationTrace = {
   prompt_version: string
   context: Omit<GenerationRequest, 'subniche' | 'additional_context'> & {
@@ -42,6 +46,25 @@ export type GenerationResponse = {
   processing_location: ProcessingLocation
   trace: GenerationTrace
   guardrails: GuardrailAssessment
+}
+
+export type SuccessfulPlatformGeneration = {
+  status: 'success'
+  platform: Platform
+  generation: GenerationResponse
+}
+
+export type FailedPlatformGeneration = {
+  status: 'error'
+  platform: Platform
+  error: {
+    code: string
+    detail: string
+  }
+}
+
+export type MultichannelGenerationResponse = {
+  results: Array<SuccessfulPlatformGeneration | FailedPlatformGeneration>
 }
 
 export type GenerationFormValues = {

@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import type { GenerationFormValues, GenerationResponse } from '../../generation/types'
+import type { GenerationFormValues, GenerationResponse, MultichannelGenerationResponse } from '../../generation/types'
 import {
   generationReducer,
   addNiche,
   initialFormValues,
   initialGenerationState,
   serializeGenerationRequest,
+  serializeMultichannelGenerationRequest,
+  selectAllPlatforms,
   removeNiche,
   toggleNiche,
   toggleSelectedPlatform,
@@ -40,6 +42,17 @@ const response: GenerationResponse = {
   guardrails: { findings: [], review_required: false },
 }
 
+const multichannelResponse: MultichannelGenerationResponse = {
+  results: [
+    { status: 'success', platform: 'linkedin', generation: response },
+    {
+      status: 'error',
+      platform: 'blog',
+      error: { code: 'provider_request_failed', detail: 'Inténtalo de nuevo.' },
+    },
+  ],
+}
+
 describe('generation form state', () => {
   it('requires the core request fields and a selected platform, but not niche or subniche', () => {
     expect(validateGenerationForm(initialFormValues)).toMatchObject({
@@ -55,6 +68,14 @@ describe('generation form state', () => {
     expect(serializeGenerationRequest({ ...validValues(), niches: ['Inteligencia Artificial', 'QA / Testing'], subniche: ' IA ', additionalContext: 'Usa un ejemplo.' })).toMatchObject({
       niches: ['Inteligencia Artificial', 'QA / Testing'], subniche: 'IA', additional_context: 'Usa un ejemplo.',
     })
+  })
+
+  it('serializes every selected platform for multichannel generation', () => {
+    expect(serializeMultichannelGenerationRequest(validValues())).toMatchObject({
+      platforms: ['linkedin', 'blog'],
+      niches: [],
+    })
+    expect(() => serializeMultichannelGenerationRequest(initialFormValues)).toThrow()
   })
 
   it('selects, deselects and de-duplicates suggested or custom niches', () => {
@@ -78,13 +99,20 @@ describe('generation form state', () => {
     expect(afterRemovingActive).toMatchObject({ selectedPlatforms: ['blog'], activePlatform: 'blog' })
   })
 
+  it('selects every available platform while preserving the active platform', () => {
+    const selected = selectAllPlatforms(validValues())
+
+    expect(selected.selectedPlatforms).toEqual(['linkedin', 'instagram', 'facebook', 'blog'])
+    expect(selected.activePlatform).toBe('linkedin')
+  })
+
   it('models idle, loading, success and recoverable error states', () => {
     const loading = generationReducer(initialGenerationState, { type: 'start' })
-    const success = generationReducer(loading, { type: 'success', result: response })
+    const success = generationReducer(loading, { type: 'success', result: multichannelResponse })
     const error = generationReducer(loading, { type: 'error', error: 'Inténtalo de nuevo.' })
 
     expect(loading.status).toBe('loading')
-    expect(success).toMatchObject({ status: 'success', result: response, error: null })
+    expect(success).toMatchObject({ status: 'success', result: multichannelResponse, error: null })
     expect(error).toMatchObject({ status: 'error', result: null, error: 'Inténtalo de nuevo.' })
   })
 })

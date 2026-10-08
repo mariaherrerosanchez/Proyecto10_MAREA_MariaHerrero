@@ -7,7 +7,8 @@ import {
   addNiche,
   initialFormValues,
   initialGenerationState,
-  serializeGenerationRequest,
+  serializeMultichannelGenerationRequest,
+  selectAllPlatforms,
   removeNiche,
   toggleNiche,
   toggleSelectedPlatform,
@@ -51,6 +52,10 @@ export function useGenerationForm() {
       : current)
   }
 
+  function selectAll() {
+    setValues((current) => selectAllPlatforms(current))
+  }
+
   async function submit() {
     if (generation.status === 'loading') {
       return
@@ -64,7 +69,9 @@ export function useGenerationForm() {
 
     dispatch({ type: 'start' })
     try {
-      const result = await createApiClient().generateContent(serializeGenerationRequest(values))
+      const result = await createApiClient().generateMultichannelContent(
+        serializeMultichannelGenerationRequest(values),
+      )
       dispatch({ type: 'success', result })
     } catch (error) {
       dispatch({
@@ -83,6 +90,7 @@ export function useGenerationForm() {
     removeSelectedNiche,
     toggleSuggestedNiche,
     togglePlatform,
+    selectAll,
     setActivePlatform,
     submit,
   }

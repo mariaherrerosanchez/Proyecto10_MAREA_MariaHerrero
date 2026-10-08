@@ -1,4 +1,4 @@
-import type { GenerationFormValues, GenerationRequest, GenerationResponse, Platform } from '../../generation/types'
+import { platforms, type GenerationFormValues, type GenerationRequest, type MultichannelGenerationRequest, type MultichannelGenerationResponse, type Platform } from '../../generation/types'
 
 export type FormErrors = Partial<Record<'topic' | 'objective' | 'audience' | 'tone' | 'language' | 'platforms', string>>
 
@@ -6,7 +6,7 @@ export type GenerationStatus = 'idle' | 'loading' | 'success' | 'error'
 
 export type GenerationState = {
   status: GenerationStatus
-  result: GenerationResponse | null
+  result: MultichannelGenerationResponse | null
   error: string | null
 }
 
@@ -71,6 +71,29 @@ export function serializeGenerationRequest(values: GenerationFormValues): Genera
   }
 }
 
+export function serializeMultichannelGenerationRequest(
+  values: GenerationFormValues,
+): MultichannelGenerationRequest {
+  if (values.selectedPlatforms.length === 0) {
+    throw new Error('At least one platform is required to serialize a multichannel generation request.')
+  }
+
+  const subniche = values.subniche.trim()
+  const additionalContext = values.additionalContext.trim()
+
+  return {
+    topic: values.topic.trim(),
+    objective: values.objective.trim(),
+    audience: values.audience.trim(),
+    tone: values.tone.trim(),
+    language: values.language.trim(),
+    niches: values.niches,
+    platforms: values.selectedPlatforms,
+    ...(subniche ? { subniche } : {}),
+    ...(additionalContext ? { additional_context: additionalContext } : {}),
+  }
+}
+
 export function normalizeNiche(value: string): string {
   return value.trim().replace(/\s+/g, ' ')
 }
@@ -114,11 +137,19 @@ export function toggleSelectedPlatform(values: GenerationFormValues, platform: P
   return { ...values, selectedPlatforms, activePlatform }
 }
 
+export function selectAllPlatforms(values: GenerationFormValues): GenerationFormValues {
+  return {
+    ...values,
+    selectedPlatforms: [...platforms],
+    activePlatform: values.activePlatform ?? platforms[0],
+  }
+}
+
 export function generationReducer(
   _state: GenerationState,
   action:
     | { type: 'start' }
-    | { type: 'success'; result: GenerationResponse }
+    | { type: 'success'; result: MultichannelGenerationResponse }
     | { type: 'error'; error: string }
     | { type: 'reset' },
 ): GenerationState {
