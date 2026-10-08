@@ -29,6 +29,15 @@
       "required_prompt_fragments": ["Instrucciones editoriales para Facebook", "dentro del feed", "pocos hashtags relevantes"]
     },
     {
+      "case_id": "blog-editorial-instructions",
+      "description": "Checks that deterministic Blog editorial guidance is included in the constructed prompt; it does not judge article quality or SEO.",
+      "context": {"topic": "Explicar una idea", "objective": "Divulgación", "audience": "Personas interesadas", "tone": "Cercano", "language": "es", "platform": "blog", "niches": ["Educación"]},
+      "candidate_output": "Una idea se comprende mejor cuando se explica con el contexto adecuado.",
+      "required_fragments": [],
+      "forbidden_fragments": [],
+      "required_prompt_fragments": ["Instrucciones editoriales para Blog", "título claro", "No inventes hechos personales"]
+    },
+    {
       "case_id": "neutral-absence-of-personal-facts",
       "description": "Uses neutral language when no personal background is supplied.",
       "context": {"topic": "Explicar la automatización", "objective": "Divulgación", "audience": "Personas no técnicas", "tone": "Cercano", "language": "es", "platform": "linkedin", "niches": ["Tecnología"]},

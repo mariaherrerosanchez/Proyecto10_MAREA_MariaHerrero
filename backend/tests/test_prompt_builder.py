@@ -48,7 +48,8 @@ def test_prompt_builder_includes_structured_context_in_system_and_user_messages(
     assert "engagement bait" in linkedin_instructions
     assert "Instrucciones editoriales para Instagram" not in linkedin_instructions
     assert "Instrucciones editoriales para Facebook" not in linkedin_instructions
-    assert result.trace.prompt_version == "v6"
+    assert "Instrucciones editoriales para Blog" not in linkedin_instructions
+    assert result.trace.prompt_version == "v7"
     assert result.trace.context == complete_context()
 
 
@@ -158,6 +159,7 @@ def test_prompt_builder_applies_distinct_instagram_rules() -> None:
     assert "bloques artificiales o spam" in instagram_instructions
     assert "Instrucciones editoriales para LinkedIn" not in instagram_instructions
     assert "Instrucciones editoriales para Facebook" not in instagram_instructions
+    assert "Instrucciones editoriales para Blog" not in instagram_instructions
     assert "No atribuyas" in str(result.request.messages[1].content)
 
 
@@ -173,22 +175,24 @@ def test_prompt_builder_applies_distinct_facebook_rules() -> None:
     assert "pocos hashtags relevantes" in facebook_instructions
     assert "Instrucciones editoriales para LinkedIn" not in facebook_instructions
     assert "Instrucciones editoriales para Instagram" not in facebook_instructions
+    assert "Instrucciones editoriales para Blog" not in facebook_instructions
     assert "No atribuyas" in str(result.request.messages[1].content)
 
 
-def test_prompt_builder_keeps_general_behavior_for_a_platform_without_rules() -> None:
+def test_prompt_builder_applies_distinct_blog_rules() -> None:
     context = complete_context().model_copy(update={"platform": "blog"})
 
     result = PromptBuilder().build(context)
 
-    assert len(result.request.messages) == 3
+    assert len(result.request.messages) == 4
+    blog_instructions = str(result.request.messages[2].content)
+    assert "Instrucciones editoriales para Blog" in blog_instructions
+    assert "título claro" in blog_instructions
+    assert "No inventes hechos personales" in blog_instructions
     assert "No atribuyas" in str(result.request.messages[1].content)
-    assert all(
-        "Instrucciones editoriales para LinkedIn" not in str(message.content)
-        and "Instrucciones editoriales para Instagram" not in str(message.content)
-        and "Instrucciones editoriales para Facebook" not in str(message.content)
-        for message in result.request.messages
-    )
+    assert "Instrucciones editoriales para LinkedIn" not in blog_instructions
+    assert "Instrucciones editoriales para Instagram" not in blog_instructions
+    assert "Instrucciones editoriales para Facebook" not in blog_instructions
 
 
 @pytest.mark.parametrize(

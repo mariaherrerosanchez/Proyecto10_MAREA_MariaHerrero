@@ -47,6 +47,18 @@ _RULES_BY_PLATFORM: dict[str, PlatformEditorialRules] = {
 - Evita engagement bait, lenguaje corporativo vacío y lenguaje promocional.
 - No presentes como propios hechos personales, profesionales, empresariales, estudios, herramientas, métricas, resultados, logros o testimonios no respaldados por el contexto.""",
     ),
+    "blog": PlatformEditorialRules(
+        platform="blog",
+        instructions="""Instrucciones editoriales para Blog:
+- Desarrolla contenido más profundo que una publicación de red social, evitando afirmaciones superficiales.
+- Propón un título claro y relacionado con el tema, seguido de una introducción que explique qué encontrará la persona lectora y aporte contexto.
+- Organiza las ideas con una progresión lógica; usa secciones y subtítulos descriptivos cuando la longitud o el contenido ayuden a comprenderlas.
+- Escribe párrafos legibles y desarrolla suficientemente la idea principal; usa listas solo cuando mejoren realmente la comprensión.
+- Cierra de forma coherente con una síntesis o conclusión útil; propone una llamada a la acción solo cuando tenga sentido para el objetivo.
+- Determina el tono a partir del contexto, nichos y datos de perfil disponibles, no por el hecho de tratarse de un blog.
+- Evita rellenar longitud con repeticiones, frases vacías, contenido genérico, SEO artificial, keyword stuffing o títulos clickbait.
+- No inventes hechos personales, profesionales, empresariales, estudios, herramientas, métricas, resultados, logros, testimonios, citas, estudios, estadísticas, referencias, enlaces ni fuentes.""",
+    ),
 }
 
 
