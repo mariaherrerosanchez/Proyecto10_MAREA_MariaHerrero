@@ -7,6 +7,7 @@ import type {
   SuccessfulPlatformGeneration,
 } from '../../generation/types'
 import type { GenerationState } from './formState'
+import type { DraftReviewState, ReviewedDraft } from './draftReviewState'
 import { platformLabels } from './constants'
 import { DraftContent } from './DraftContent'
 import { processingLocationLabel, reviewMessage } from './draftPresentation'
@@ -26,13 +27,24 @@ type DraftMultichannelGenerationResponse = {
 }
 
 type GenerationFeedbackProps = {
+  draftReviews: DraftReviewState
   generation: Omit<GenerationState, 'result'> & {
     result: DraftMultichannelGenerationResponse | null
   }
   initialPlatform: Platform | null
+  onBeginEdit: (platform: Platform) => void
+  onConfirmReview: (platform: Platform) => void
+  onDraftChange: (platform: Platform, text: string) => void
 }
 
-export function GenerationFeedback({ generation, initialPlatform }: GenerationFeedbackProps) {
+export function GenerationFeedback({
+  draftReviews,
+  generation,
+  initialPlatform,
+  onBeginEdit,
+  onConfirmReview,
+  onDraftChange,
+}: GenerationFeedbackProps) {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(initialPlatform)
   const tabRefs = useRef<Partial<Record<Platform, HTMLButtonElement>>>({})
 
@@ -115,14 +127,43 @@ export function GenerationFeedback({ generation, initialPlatform }: GenerationFe
       </div>
       <div aria-labelledby={`generation-tab-${activePlatform}`} id={`generation-panel-${activePlatform}`} role="tabpanel" tabIndex={0}>
         {activeResult.status === 'success'
-          ? <GeneratedDraft generation={activeResult.generation} platform={activeResult.platform} />
+          ? <GeneratedDraft
+              draft={draftReviews[activeResult.platform] ?? createPendingDraft(activeResult.generation.text)}
+              generation={activeResult.generation}
+              key={activeResult.platform}
+              onBeginEdit={onBeginEdit}
+              onConfirmReview={onConfirmReview}
+              onDraftChange={onDraftChange}
+              platform={activeResult.platform}
+            />
           : <GenerationFailure error={activeResult} />}
       </div>
     </section>
   )
 }
 
-function GeneratedDraft({ generation, platform }: { generation: DraftPresentationResponse, platform: Platform }) {
+function createPendingDraft(text: string): ReviewedDraft {
+  return { originalText: text, text, reviewed: false }
+}
+
+type GeneratedDraftProps = {
+  draft: ReviewedDraft
+  generation: DraftPresentationResponse
+  onBeginEdit: (platform: Platform) => void
+  onConfirmReview: (platform: Platform) => void
+  onDraftChange: (platform: Platform, text: string) => void
+  platform: Platform
+}
+
+function GeneratedDraft({
+  draft,
+  generation,
+  onBeginEdit,
+  onConfirmReview,
+  onDraftChange,
+  platform,
+}: GeneratedDraftProps) {
+  const [isEditing, setIsEditing] = useState(false)
   const guardrailReviewMessage = reviewMessage(generation.guardrails)
   return (
     <section className="generation-draft" aria-live="polite" aria-labelledby="draft-heading">
@@ -130,7 +171,44 @@ function GeneratedDraft({ generation, platform }: { generation: DraftPresentatio
       <h2 id="draft-heading">Revísalo antes de utilizarlo</h2>
       <p className="generation-draft__notice">Es una propuesta inicial: la decisión editorial siempre es tuya.</p>
       {guardrailReviewMessage ? <p className="generation-draft__review-alert" role="status">{guardrailReviewMessage}</p> : null}
-      <DraftContent text={generation.text} />
+      {isEditing ? (
+        <label className="form-field generation-draft__editor" htmlFor={`draft-editor-${platform}`}>
+          <span>Texto del borrador</span>
+          <textarea
+            id={`draft-editor-${platform}`}
+            onChange={(event) => onDraftChange(platform, event.target.value)}
+            rows={12}
+            value={draft.text}
+          />
+        </label>
+      ) : <DraftContent text={draft.text} />}
+      <div className="generation-draft__actions">
+        {isEditing ? (
+          <button className="generation-draft__action" onClick={() => setIsEditing(false)} type="button">
+            Terminar edición
+          </button>
+        ) : (
+          <button
+            className="generation-draft__action"
+            onClick={() => {
+              onBeginEdit(platform)
+              setIsEditing(true)
+            }}
+            type="button"
+          >
+            Editar borrador
+          </button>
+        )}
+        <button
+          className="generation-draft__action generation-draft__action--review"
+          disabled={draft.reviewed}
+          onClick={() => onConfirmReview(platform)}
+          type="button"
+        >
+          {draft.reviewed ? 'Revisión confirmada' : 'Confirmar revisión'}
+        </button>
+      </div>
+      {draft.reviewed ? <p className="generation-draft__reviewed" role="status">Esta pieza está revisada.</p> : null}
       <dl className="generation-draft__metadata">
         <div><dt>Proveedor</dt><dd>{generation.provider}</dd></div>
         <div><dt>Modelo</dt><dd>{generation.model}</dd></div>
