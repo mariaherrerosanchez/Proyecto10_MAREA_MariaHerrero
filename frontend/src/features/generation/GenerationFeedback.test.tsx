@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { GenerationFeedback } from './GenerationFeedback'
-import { initialResultPlatform } from './resultTabs'
+import { initialResultPlatform, shouldInitializeResultTab } from './resultTabs'
 
 describe('GenerationFeedback', () => {
   it('keeps the draft and the general review notice visible when guardrails are absent', () => {
@@ -51,6 +51,8 @@ describe('GenerationFeedback', () => {
         onBeginEdit={() => undefined}
         onConfirmReview={() => undefined}
         onDraftChange={() => undefined}
+        onRegenerate={() => undefined}
+        regenerations={{}}
       />,
     )
 
@@ -63,6 +65,7 @@ describe('GenerationFeedback', () => {
     expect(markup).toContain('LinkedIn')
     expect(markup).toContain('Editar borrador')
     expect(markup).toContain('Confirmar revisión')
+    expect(markup).toContain('Regenerar borrador')
     expect(markup).not.toContain('Publicar')
   })
 
@@ -76,5 +79,9 @@ describe('GenerationFeedback', () => {
 
     expect(initialResultPlatform(result, 'blog')).toBe('blog')
     expect(initialResultPlatform(result, 'linkedin')).toBe('instagram')
+  })
+
+  it('does not reset the selected Instagram tab when regeneration replaces an existing result', () => {
+    expect(shouldInitializeResultTab(true, true)).toBe(false)
   })
 })

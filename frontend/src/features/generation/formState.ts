@@ -1,4 +1,5 @@
-import { platforms, type GenerationFormValues, type GenerationRequest, type MultichannelGenerationRequest, type MultichannelGenerationResponse, type Platform } from '../../generation/types'
+import { platforms, type GenerationFormValues, type GenerationRequest, type GenerationResponse, type MultichannelGenerationRequest, type MultichannelGenerationResponse, type Platform } from '../../generation/types'
+import { replacePlatformGeneration } from './regenerationState'
 
 export type FormErrors = Partial<Record<'topic' | 'objective' | 'audience' | 'tone' | 'language' | 'platforms', string>>
 
@@ -150,6 +151,7 @@ export function generationReducer(
   action:
     | { type: 'start' }
     | { type: 'success'; result: MultichannelGenerationResponse }
+    | { type: 'replace-platform'; platform: Platform; generation: GenerationResponse }
     | { type: 'error'; error: string }
     | { type: 'reset' },
 ): GenerationState {
@@ -158,6 +160,10 @@ export function generationReducer(
       return { status: 'loading', result: null, error: null }
     case 'success':
       return { status: 'success', result: action.result, error: null }
+    case 'replace-platform':
+      return _state.result === null
+        ? _state
+        : { ..._state, result: replacePlatformGeneration(_state.result, action.platform, action.generation) }
     case 'error':
       return { status: 'error', result: null, error: action.error }
     case 'reset':

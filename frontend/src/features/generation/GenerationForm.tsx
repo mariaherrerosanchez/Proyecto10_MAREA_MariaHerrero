@@ -22,6 +22,9 @@ export function GenerationForm() {
     beginEditingDraft,
     updateDraft,
     confirmDraftReview,
+    regenerations,
+    regenerationInProgress,
+    regeneratePlatform,
     submit,
   } = useGenerationForm()
 
@@ -30,7 +33,7 @@ export function GenerationForm() {
     void submit()
   }
 
-  const isLoading = generation.status === 'loading'
+  const isLoading = generation.status === 'loading' || regenerationInProgress
 
   return (
     <form className="generation-form" noValidate onSubmit={handleSubmit}>
@@ -115,6 +118,8 @@ export function GenerationForm() {
         onBeginEdit={beginEditingDraft}
         onConfirmReview={confirmDraftReview}
         onDraftChange={updateDraft}
+        onRegenerate={regeneratePlatform}
+        regenerations={regenerations}
       />
     </form>
   )

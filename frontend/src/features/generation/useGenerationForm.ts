@@ -1,12 +1,14 @@
-import { useReducer, useState } from 'react'
+import { useReducer, useRef, useState } from 'react'
 
-import type { GenerationFormValues, Platform } from '../../generation/types'
+import type { GenerationFormValues, MultichannelGenerationRequest, Platform } from '../../generation/types'
 import { createApiClient } from '../../services/api'
 import {
   beginDraftEdit,
   createDraftReviewState,
+  hasEditedDraft,
   hasEditedDrafts,
   markDraftReviewed,
+  replaceDraft,
   updateDraftText,
   type DraftReviewState,
 } from './draftReviewState'
@@ -23,6 +25,14 @@ import {
   validateGenerationForm,
   type FormErrors,
 } from './formState'
+import {
+  completePlatformRegeneration,
+  createRegenerationRequest,
+  failPlatformRegeneration,
+  hasRegenerationInProgress,
+  startPlatformRegeneration,
+  type PlatformRegenerationState,
+} from './regenerationState'
 
 const fallbackError = 'No se ha podido generar el borrador. Inténtalo de nuevo.'
 
@@ -31,6 +41,9 @@ export function useGenerationForm() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [generation, dispatch] = useReducer(generationReducer, initialGenerationState)
   const [draftReviews, setDraftReviews] = useState<DraftReviewState>({})
+  const [originalRequest, setOriginalRequest] = useState<MultichannelGenerationRequest | null>(null)
+  const [regenerations, setRegenerations] = useState<PlatformRegenerationState>({})
+  const regeneratingPlatforms = useRef(new Set<Platform>())
 
   function updateField<Field extends Exclude<keyof GenerationFormValues, 'niches' | 'selectedPlatforms' | 'activePlatform'>>(
     field: Field,
@@ -77,8 +90,43 @@ export function useGenerationForm() {
     setDraftReviews((current) => markDraftReviewed(current, platform))
   }
 
+  async function regeneratePlatform(platform: Platform) {
+    if (
+      originalRequest === null
+      || regeneratingPlatforms.current.has(platform)
+      || generation.status === 'loading'
+    ) {
+      return
+    }
+
+    if (hasEditedDraft(draftReviews, platform) && !window.confirm(
+      'Tienes cambios locales en esta pieza. Regenerarla sustituirá ese borrador. ¿Quieres continuar?',
+    )) {
+      return
+    }
+
+    regeneratingPlatforms.current.add(platform)
+    setRegenerations((current) => startPlatformRegeneration(current, platform))
+    try {
+      const regenerated = await createApiClient().generateContent(
+        createRegenerationRequest(originalRequest, platform),
+      )
+      setDraftReviews((current) => replaceDraft(current, platform, regenerated.text))
+      dispatch({ type: 'replace-platform', platform, generation: regenerated })
+      setRegenerations((current) => completePlatformRegeneration(current, platform))
+    } catch (error) {
+      setRegenerations((current) => failPlatformRegeneration(
+        current,
+        platform,
+        error instanceof Error ? error.message : fallbackError,
+      ))
+    } finally {
+      regeneratingPlatforms.current.delete(platform)
+    }
+  }
+
   async function submit() {
-    if (generation.status === 'loading') {
+    if (generation.status === 'loading' || regeneratingPlatforms.current.size > 0 || hasRegenerationInProgress(regenerations)) {
       return
     }
 
@@ -95,12 +143,13 @@ export function useGenerationForm() {
     }
 
     setDraftReviews({})
+    setRegenerations({})
     dispatch({ type: 'start' })
     try {
-      const result = await createApiClient().generateMultichannelContent(
-        serializeMultichannelGenerationRequest(values),
-      )
+      const request = serializeMultichannelGenerationRequest(values)
+      const result = await createApiClient().generateMultichannelContent(request)
       setDraftReviews(createDraftReviewState(result))
+      setOriginalRequest(request)
       dispatch({ type: 'success', result })
     } catch (error) {
       dispatch({
@@ -125,6 +174,9 @@ export function useGenerationForm() {
     beginEditingDraft,
     updateDraft,
     confirmDraftReview,
+    regenerations,
+    regenerationInProgress: hasRegenerationInProgress(regenerations),
+    regeneratePlatform,
     submit,
   }
 }
