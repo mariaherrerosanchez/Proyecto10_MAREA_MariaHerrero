@@ -11,6 +11,7 @@ import type { DraftReviewState, ReviewedDraft } from './draftReviewState'
 import type { PlatformRegenerationState } from './regenerationState'
 import { platformLabels } from './constants'
 import { DraftContent } from './DraftContent'
+import { copyDraftText, downloadDraftText } from './draftOutput'
 import { processingLocationLabel, reviewMessage } from './draftPresentation'
 import { initialResultPlatform, shouldInitializeResultTab } from './resultTabs'
 
@@ -40,6 +41,11 @@ type GenerationFeedbackProps = {
   regenerations: PlatformRegenerationState
 }
 
+type DraftOutputFeedback = {
+  message: string
+  status: 'loading' | 'success' | 'error'
+}
+
 export function GenerationFeedback({
   draftReviews,
   generation,
@@ -51,6 +57,7 @@ export function GenerationFeedback({
   regenerations,
 }: GenerationFeedbackProps) {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(initialPlatform)
+  const [outputFeedback, setOutputFeedback] = useState<Partial<Record<Platform, DraftOutputFeedback>>>({})
   const hadGenerationResult = useRef(false)
   const tabRefs = useRef<Partial<Record<Platform, HTMLButtonElement>>>({})
 
@@ -108,6 +115,48 @@ export function GenerationFeedback({
     }
   }
 
+  function clearOutputFeedback(platform: Platform) {
+    setOutputFeedback((current) => {
+      const next = { ...current }
+      delete next[platform]
+      return next
+    })
+  }
+
+  async function copyDraft(platform: Platform, text: string) {
+    setOutputFeedback((current) => ({
+      ...current,
+      [platform]: { status: 'loading', message: 'Copiando texto…' },
+    }))
+    try {
+      await copyDraftText(text)
+      setOutputFeedback((current) => ({
+        ...current,
+        [platform]: { status: 'success', message: 'Texto copiado al portapapeles.' },
+      }))
+    } catch {
+      setOutputFeedback((current) => ({
+        ...current,
+        [platform]: { status: 'error', message: 'No se pudo copiar el texto. Inténtalo de nuevo.' },
+      }))
+    }
+  }
+
+  function downloadDraft(platform: Platform, text: string, topic: string) {
+    try {
+      downloadDraftText(text, platform, topic)
+      setOutputFeedback((current) => ({
+        ...current,
+        [platform]: { status: 'success', message: 'Descarga iniciada.' },
+      }))
+    } catch {
+      setOutputFeedback((current) => ({
+        ...current,
+        [platform]: { status: 'error', message: 'No se pudo preparar la descarga. Inténtalo de nuevo.' },
+      }))
+    }
+  }
+
   return (
     <section className="generation-results" aria-label="Borradores generados">
       <div aria-label="Plataformas generadas" className="generation-results__tabs" role="tablist">
@@ -139,10 +188,22 @@ export function GenerationFeedback({
               draft={draftReviews[activeResult.platform] ?? createPendingDraft(activeResult.generation.text)}
               generation={activeResult.generation}
               key={activeResult.platform}
-              onBeginEdit={onBeginEdit}
+              onBeginEdit={(platform) => {
+                clearOutputFeedback(platform)
+                onBeginEdit(platform)
+              }}
               onConfirmReview={onConfirmReview}
-              onDraftChange={onDraftChange}
-              onRegenerate={onRegenerate}
+              onCopy={copyDraft}
+              onDownload={downloadDraft}
+              onDraftChange={(platform, text) => {
+                clearOutputFeedback(platform)
+                onDraftChange(platform, text)
+              }}
+              onRegenerate={(platform) => {
+                clearOutputFeedback(platform)
+                onRegenerate(platform)
+              }}
+              outputFeedback={outputFeedback[activeResult.platform]}
               platform={activeResult.platform}
               regeneration={regenerations[activeResult.platform]}
             />
@@ -165,8 +226,11 @@ type GeneratedDraftProps = {
   generation: DraftPresentationResponse
   onBeginEdit: (platform: Platform) => void
   onConfirmReview: (platform: Platform) => void
+  onCopy: (platform: Platform, text: string) => Promise<void>
+  onDownload: (platform: Platform, text: string, topic: string) => void
   onDraftChange: (platform: Platform, text: string) => void
   onRegenerate: (platform: Platform) => void
+  outputFeedback: DraftOutputFeedback | undefined
   platform: Platform
   regeneration: PlatformRegenerationState[Platform]
 }
@@ -176,14 +240,19 @@ function GeneratedDraft({
   generation,
   onBeginEdit,
   onConfirmReview,
+  onCopy,
+  onDownload,
   onDraftChange,
   onRegenerate,
+  outputFeedback,
   platform,
   regeneration,
 }: GeneratedDraftProps) {
   const [isEditing, setIsEditing] = useState(false)
   const guardrailReviewMessage = reviewMessage(generation.guardrails)
   const isRegenerating = regeneration?.status === 'loading'
+  const outputEnabled = draft.reviewed && !isRegenerating
+  const outputLoading = outputFeedback?.status === 'loading'
   return (
     <section className="generation-draft" aria-live="polite" aria-labelledby="draft-heading">
       <p className="eyebrow">Borrador para {platformLabels[platform]}</p>
@@ -240,6 +309,33 @@ function GeneratedDraft({
       {draft.reviewed ? <p className="generation-draft__reviewed" role="status">Esta pieza está revisada.</p> : null}
       {isRegenerating ? <p className="generation-draft__regeneration" role="status">MAREA está regenerando esta pieza…</p> : null}
       {regeneration?.status === 'error' ? <p className="generation-feedback generation-feedback--error" role="alert">{regeneration.error}</p> : null}
+      <div className="generation-draft__output" aria-describedby={`draft-output-help-${platform}`}>
+        <p id={`draft-output-help-${platform}`}>
+          {draft.reviewed
+            ? 'Puedes copiar o descargar esta revisión.'
+            : 'Confirma la revisión para habilitar la copia y la descarga.'}
+        </p>
+        <div className="generation-draft__actions">
+          <button
+            className="generation-draft__action"
+            disabled={!outputEnabled || outputLoading}
+            onClick={() => void onCopy(platform, draft.text)}
+            type="button"
+          >
+            {outputLoading ? 'Copiando…' : 'Copiar texto'}
+          </button>
+          <button
+            className="generation-draft__action"
+            disabled={!outputEnabled || outputLoading}
+            onClick={() => onDownload(platform, draft.text, generation.trace.context.topic)}
+            type="button"
+          >
+            Descargar .txt
+          </button>
+        </div>
+        {outputFeedback?.status === 'success' ? <p className="generation-draft__output-message" role="status">{outputFeedback.message}</p> : null}
+        {outputFeedback?.status === 'error' ? <p className="generation-feedback generation-feedback--error" role="alert">{outputFeedback.message}</p> : null}
+      </div>
       <dl className="generation-draft__metadata">
         <div><dt>Proveedor</dt><dd>{generation.provider}</dd></div>
         <div><dt>Modelo</dt><dd>{generation.model}</dd></div>
