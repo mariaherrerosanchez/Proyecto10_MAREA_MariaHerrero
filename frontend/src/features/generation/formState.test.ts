@@ -78,6 +78,31 @@ describe('generation form state', () => {
     expect(() => serializeMultichannelGenerationRequest(initialFormValues)).toThrow()
   })
 
+  it('replaces only one platform result after an individual regeneration', () => {
+    const initial = {
+      status: 'success' as const,
+      error: null,
+      result: {
+        results: [
+          { status: 'success' as const, platform: 'linkedin' as const, generation: response },
+          { status: 'error' as const, platform: 'instagram' as const, error: { code: 'provider_request_failed', detail: 'Error seguro.' } },
+        ],
+      },
+    }
+    const regenerated = { ...response, text: 'Nueva pieza para Instagram.' }
+
+    const next = generationReducer(initial, {
+      type: 'replace-platform',
+      platform: 'instagram',
+      generation: regenerated,
+    })
+
+    expect(next.result?.results).toEqual([
+      initial.result.results[0],
+      { status: 'success', platform: 'instagram', generation: regenerated },
+    ])
+  })
+
   it('selects, deselects and de-duplicates suggested or custom niches', () => {
     const withFirstNiche = addNiche(validValues(), ' Inteligencia Artificial ')
     const withSecondNiche = toggleNiche(withFirstNiche, 'QA / Testing')

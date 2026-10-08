@@ -8,10 +8,11 @@ import type {
 } from '../../generation/types'
 import type { GenerationState } from './formState'
 import type { DraftReviewState, ReviewedDraft } from './draftReviewState'
+import type { PlatformRegenerationState } from './regenerationState'
 import { platformLabels } from './constants'
 import { DraftContent } from './DraftContent'
 import { processingLocationLabel, reviewMessage } from './draftPresentation'
-import { initialResultPlatform } from './resultTabs'
+import { initialResultPlatform, shouldInitializeResultTab } from './resultTabs'
 
 type DraftPresentationResponse = Omit<SuccessfulPlatformGeneration['generation'], 'guardrails' | 'processing_location'> & {
   guardrails?: GuardrailAssessment | null
@@ -35,6 +36,8 @@ type GenerationFeedbackProps = {
   onBeginEdit: (platform: Platform) => void
   onConfirmReview: (platform: Platform) => void
   onDraftChange: (platform: Platform, text: string) => void
+  onRegenerate: (platform: Platform) => void
+  regenerations: PlatformRegenerationState
 }
 
 export function GenerationFeedback({
@@ -44,14 +47,19 @@ export function GenerationFeedback({
   onBeginEdit,
   onConfirmReview,
   onDraftChange,
+  onRegenerate,
+  regenerations,
 }: GenerationFeedbackProps) {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(initialPlatform)
+  const hadGenerationResult = useRef(false)
   const tabRefs = useRef<Partial<Record<Platform, HTMLButtonElement>>>({})
 
   useEffect(() => {
-    if (generation.result !== null) {
+    const hasCurrentResult = generation.result !== null
+    if (shouldInitializeResultTab(hadGenerationResult.current, hasCurrentResult) && generation.result !== null) {
       setSelectedPlatform(initialResultPlatform(generation.result, initialPlatform))
     }
+    hadGenerationResult.current = hasCurrentResult
   }, [generation.result, initialPlatform])
 
   if (generation.status === 'idle') {
@@ -134,9 +142,15 @@ export function GenerationFeedback({
               onBeginEdit={onBeginEdit}
               onConfirmReview={onConfirmReview}
               onDraftChange={onDraftChange}
+              onRegenerate={onRegenerate}
               platform={activeResult.platform}
+              regeneration={regenerations[activeResult.platform]}
             />
-          : <GenerationFailure error={activeResult} />}
+          : <GenerationFailure
+              error={activeResult}
+              onRegenerate={onRegenerate}
+              regeneration={regenerations[activeResult.platform]}
+            />}
       </div>
     </section>
   )
@@ -152,7 +166,9 @@ type GeneratedDraftProps = {
   onBeginEdit: (platform: Platform) => void
   onConfirmReview: (platform: Platform) => void
   onDraftChange: (platform: Platform, text: string) => void
+  onRegenerate: (platform: Platform) => void
   platform: Platform
+  regeneration: PlatformRegenerationState[Platform]
 }
 
 function GeneratedDraft({
@@ -161,10 +177,13 @@ function GeneratedDraft({
   onBeginEdit,
   onConfirmReview,
   onDraftChange,
+  onRegenerate,
   platform,
+  regeneration,
 }: GeneratedDraftProps) {
   const [isEditing, setIsEditing] = useState(false)
   const guardrailReviewMessage = reviewMessage(generation.guardrails)
+  const isRegenerating = regeneration?.status === 'loading'
   return (
     <section className="generation-draft" aria-live="polite" aria-labelledby="draft-heading">
       <p className="eyebrow">Borrador para {platformLabels[platform]}</p>
@@ -176,6 +195,7 @@ function GeneratedDraft({
           <span>Texto del borrador</span>
           <textarea
             id={`draft-editor-${platform}`}
+            disabled={isRegenerating}
             onChange={(event) => onDraftChange(platform, event.target.value)}
             rows={12}
             value={draft.text}
@@ -184,7 +204,7 @@ function GeneratedDraft({
       ) : <DraftContent text={draft.text} />}
       <div className="generation-draft__actions">
         {isEditing ? (
-          <button className="generation-draft__action" onClick={() => setIsEditing(false)} type="button">
+          <button className="generation-draft__action" disabled={isRegenerating} onClick={() => setIsEditing(false)} type="button">
             Terminar edición
           </button>
         ) : (
@@ -194,6 +214,7 @@ function GeneratedDraft({
               onBeginEdit(platform)
               setIsEditing(true)
             }}
+            disabled={isRegenerating}
             type="button"
           >
             Editar borrador
@@ -201,14 +222,24 @@ function GeneratedDraft({
         )}
         <button
           className="generation-draft__action generation-draft__action--review"
-          disabled={draft.reviewed}
+          disabled={draft.reviewed || isRegenerating}
           onClick={() => onConfirmReview(platform)}
           type="button"
         >
           {draft.reviewed ? 'Revisión confirmada' : 'Confirmar revisión'}
         </button>
+        <button
+          className="generation-draft__action"
+          disabled={isRegenerating}
+          onClick={() => onRegenerate(platform)}
+          type="button"
+        >
+          {isRegenerating ? 'Regenerando…' : 'Regenerar borrador'}
+        </button>
       </div>
       {draft.reviewed ? <p className="generation-draft__reviewed" role="status">Esta pieza está revisada.</p> : null}
+      {isRegenerating ? <p className="generation-draft__regeneration" role="status">MAREA está regenerando esta pieza…</p> : null}
+      {regeneration?.status === 'error' ? <p className="generation-feedback generation-feedback--error" role="alert">{regeneration.error}</p> : null}
       <dl className="generation-draft__metadata">
         <div><dt>Proveedor</dt><dd>{generation.provider}</dd></div>
         <div><dt>Modelo</dt><dd>{generation.model}</dd></div>
@@ -219,11 +250,29 @@ function GeneratedDraft({
   )
 }
 
-function GenerationFailure({ error }: { error: FailedPlatformGeneration }) {
+function GenerationFailure({
+  error,
+  onRegenerate,
+  regeneration,
+}: {
+  error: FailedPlatformGeneration
+  onRegenerate: (platform: Platform) => void
+  regeneration: PlatformRegenerationState[Platform]
+}) {
+  const isRegenerating = regeneration?.status === 'loading'
   return (
     <section className="generation-feedback generation-feedback--error" role="alert">
       <p className="eyebrow">{platformLabels[error.platform]}</p>
       <p>{error.error.detail}</p>
+      <button
+        className="generation-draft__action"
+        disabled={isRegenerating}
+        onClick={() => onRegenerate(error.platform)}
+        type="button"
+      >
+        {isRegenerating ? 'Reintentando…' : 'Reintentar generación'}
+      </button>
+      {regeneration?.status === 'error' ? <p role="alert">{regeneration.error}</p> : null}
     </section>
   )
 }

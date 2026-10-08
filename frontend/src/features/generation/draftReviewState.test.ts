@@ -4,8 +4,10 @@ import type { MultichannelGenerationResponse } from '../../generation/types'
 import {
   beginDraftEdit,
   createDraftReviewState,
+  hasEditedDraft,
   hasEditedDrafts,
   markDraftReviewed,
+  replaceDraft,
   updateDraftText,
 } from './draftReviewState'
 
@@ -63,5 +65,19 @@ describe('draft review state', () => {
 
     expect(reviewed.linkedin?.reviewed).toBe(true)
     expect(reviewed.instagram?.reviewed).toBe(false)
+  })
+
+  it('replaces only the regenerated draft and resets its review state', () => {
+    const edited = updateDraftText(createDraftReviewState(result), 'linkedin', 'Versión local.')
+    const reviewed = markDraftReviewed(edited, 'instagram')
+    const replaced = replaceDraft(reviewed, 'linkedin', 'Nueva versión generada.')
+
+    expect(hasEditedDraft(reviewed, 'linkedin')).toBe(true)
+    expect(replaced.linkedin).toEqual({
+      originalText: 'Nueva versión generada.',
+      text: 'Nueva versión generada.',
+      reviewed: false,
+    })
+    expect(replaced.instagram).toMatchObject({ text: 'Borrador de Instagram.', reviewed: true })
   })
 })

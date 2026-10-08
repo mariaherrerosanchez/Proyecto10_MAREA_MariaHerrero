@@ -4,6 +4,10 @@ type PlatformResult = {
   platform: Platform
 }
 
+export function shouldInitializeResultTab(hadPreviousResult: boolean, hasCurrentResult: boolean): boolean {
+  return !hadPreviousResult && hasCurrentResult
+}
+
 export function initialResultPlatform(
   result: { results: PlatformResult[] },
   preferredPlatform: Platform | null,

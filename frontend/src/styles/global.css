@@ -1261,6 +1261,16 @@ h3 {
   margin: 0 0 var(--space-3);
 }
 
+.generation-draft__regeneration {
+  color: var(--color-muted);
+  font-size: 0.88rem;
+  margin: 0 0 var(--space-3);
+}
+
+.generation-feedback .generation-draft__action {
+  margin-top: var(--space-3);
+}
+
 .generation-draft__metadata {
   border-top: 1px solid rgb(77 141 133 / 28%);
   display: flex;

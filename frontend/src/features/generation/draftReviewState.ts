@@ -43,3 +43,15 @@ export function markDraftReviewed(state: DraftReviewState, platform: Platform): 
 export function hasEditedDrafts(state: DraftReviewState): boolean {
   return Object.values(state).some((draft) => draft?.text !== draft?.originalText)
 }
+
+export function hasEditedDraft(state: DraftReviewState, platform: Platform): boolean {
+  const draft = state[platform]
+  return draft !== undefined && draft.text !== draft.originalText
+}
+
+export function replaceDraft(state: DraftReviewState, platform: Platform, text: string): DraftReviewState {
+  return {
+    ...state,
+    [platform]: { originalText: text, text, reviewed: false },
+  }
+}
