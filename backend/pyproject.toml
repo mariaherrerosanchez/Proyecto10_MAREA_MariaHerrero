@@ -1,0 +1,22 @@
+[project]
+name = "marea-backend"
+version = "0.1.0"
+description = "Backend API foundation for MAREA"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "langchain-core>=0.3,<1.0",
+    "langchain-groq>=0.3.8",
+    "pydantic-settings>=2.6,<3.0",
+    "uvicorn[standard]>=0.30,<1.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27,<1.0",
+    "pytest>=8.0,<9.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
