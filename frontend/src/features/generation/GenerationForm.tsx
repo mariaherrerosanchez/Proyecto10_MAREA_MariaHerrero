@@ -18,6 +18,10 @@ export function GenerationForm() {
     togglePlatform,
     selectAll,
     setActivePlatform,
+    draftReviews,
+    beginEditingDraft,
+    updateDraft,
+    confirmDraftReview,
     submit,
   } = useGenerationForm()
 
@@ -104,7 +108,14 @@ export function GenerationForm() {
         </button>
         <p>Generaremos una pieza por plataforma seleccionada. Podrás revisarlas antes de utilizarlas.</p>
       </div>
-      <GenerationFeedback generation={generation} initialPlatform={values.activePlatform} />
+      <GenerationFeedback
+        draftReviews={draftReviews}
+        generation={generation}
+        initialPlatform={values.activePlatform}
+        onBeginEdit={beginEditingDraft}
+        onConfirmReview={confirmDraftReview}
+        onDraftChange={updateDraft}
+      />
     </form>
   )
 }

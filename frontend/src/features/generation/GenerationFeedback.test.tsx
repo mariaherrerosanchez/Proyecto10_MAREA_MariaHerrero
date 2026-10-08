@@ -8,6 +8,7 @@ describe('GenerationFeedback', () => {
   it('keeps the draft and the general review notice visible when guardrails are absent', () => {
     const markup = renderToStaticMarkup(
       <GenerationFeedback
+        draftReviews={{}}
         generation={{
           status: 'success',
           error: null,
@@ -47,6 +48,9 @@ describe('GenerationFeedback', () => {
           },
         }}
         initialPlatform="blog"
+        onBeginEdit={() => undefined}
+        onConfirmReview={() => undefined}
+        onDraftChange={() => undefined}
       />,
     )
 
@@ -57,6 +61,9 @@ describe('GenerationFeedback', () => {
     expect(markup).toContain('role="tablist"')
     expect(markup).toContain('Blog')
     expect(markup).toContain('LinkedIn')
+    expect(markup).toContain('Editar borrador')
+    expect(markup).toContain('Confirmar revisión')
+    expect(markup).not.toContain('Publicar')
   })
 
   it('uses the active platform when available and falls back to the first result', () => {
