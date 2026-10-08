@@ -62,7 +62,7 @@ def test_generation_endpoint_returns_text_and_provider_metadata() -> None:
         "model": "configured-model",
         "processing_location": "external",
         "trace": {
-            "prompt_version": "v6",
+            "prompt_version": "v7",
             "context": valid_request_body()
             | {
                 "subniche": None,
