@@ -6,6 +6,7 @@ type PlatformSelectorProps = {
   selectedPlatforms: Platform[]
   error?: string
   onActivePlatformChange: (platform: Platform) => void
+  onSelectAll: () => void
   onTogglePlatform: (platform: Platform) => void
 }
 
@@ -14,6 +15,7 @@ export function PlatformSelector({
   selectedPlatforms,
   error,
   onActivePlatformChange,
+  onSelectAll,
   onTogglePlatform,
 }: PlatformSelectorProps) {
   return (
@@ -25,7 +27,10 @@ export function PlatformSelector({
         </div>
         <p className="generation-form__required">Obligatorio</p>
       </div>
-      <p className="generation-form__helper">Puedes preparar una o varias plataformas. El borrador actual se genera para la plataforma principal.</p>
+      <p className="generation-form__helper">Generaremos una pieza independiente para cada plataforma seleccionada. La principal determina la pestaña inicial.</p>
+      <button className="platform-selector__select-all" disabled={selectedPlatforms.length === platforms.length} onClick={onSelectAll} type="button">
+        {selectedPlatforms.length === platforms.length ? 'Todas seleccionadas' : 'Seleccionar todas'}
+      </button>
       <div className="platform-list" role="group" aria-describedby={error ? 'platform-error' : undefined}>
         {platforms.map((platform) => {
           const selected = selectedPlatforms.includes(platform)

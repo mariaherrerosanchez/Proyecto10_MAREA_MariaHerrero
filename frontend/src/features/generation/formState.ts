@@ -1,4 +1,5 @@
-import type { GenerationFormValues, GenerationRequest, GenerationResponse, Platform } from '../../generation/types'
+import { platforms, type GenerationFormValues, type GenerationRequest, type GenerationResponse, type MultichannelGenerationRequest, type MultichannelGenerationResponse, type Platform } from '../../generation/types'
+import { replacePlatformGeneration } from './regenerationState'
 
 export type FormErrors = Partial<Record<'topic' | 'objective' | 'audience' | 'tone' | 'language' | 'platforms', string>>
 
@@ -6,7 +7,7 @@ export type GenerationStatus = 'idle' | 'loading' | 'success' | 'error'
 
 export type GenerationState = {
   status: GenerationStatus
-  result: GenerationResponse | null
+  result: MultichannelGenerationResponse | null
   error: string | null
 }
 
@@ -16,6 +17,7 @@ export const initialFormValues: GenerationFormValues = {
   audience: '',
   tone: '',
   language: 'es',
+  modelSelection: 'primary',
   additionalContext: '',
   niches: [],
   subniche: '',
@@ -64,8 +66,33 @@ export function serializeGenerationRequest(values: GenerationFormValues): Genera
     audience: values.audience.trim(),
     tone: values.tone.trim(),
     language: values.language.trim(),
+    model_selection: values.modelSelection,
     platform: values.activePlatform,
     niches: values.niches,
+    ...(subniche ? { subniche } : {}),
+    ...(additionalContext ? { additional_context: additionalContext } : {}),
+  }
+}
+
+export function serializeMultichannelGenerationRequest(
+  values: GenerationFormValues,
+): MultichannelGenerationRequest {
+  if (values.selectedPlatforms.length === 0) {
+    throw new Error('At least one platform is required to serialize a multichannel generation request.')
+  }
+
+  const subniche = values.subniche.trim()
+  const additionalContext = values.additionalContext.trim()
+
+  return {
+    topic: values.topic.trim(),
+    objective: values.objective.trim(),
+    audience: values.audience.trim(),
+    tone: values.tone.trim(),
+    language: values.language.trim(),
+    model_selection: values.modelSelection,
+    niches: values.niches,
+    platforms: values.selectedPlatforms,
     ...(subniche ? { subniche } : {}),
     ...(additionalContext ? { additional_context: additionalContext } : {}),
   }
@@ -114,11 +141,20 @@ export function toggleSelectedPlatform(values: GenerationFormValues, platform: P
   return { ...values, selectedPlatforms, activePlatform }
 }
 
+export function selectAllPlatforms(values: GenerationFormValues): GenerationFormValues {
+  return {
+    ...values,
+    selectedPlatforms: [...platforms],
+    activePlatform: values.activePlatform ?? platforms[0],
+  }
+}
+
 export function generationReducer(
   _state: GenerationState,
   action:
     | { type: 'start' }
-    | { type: 'success'; result: GenerationResponse }
+    | { type: 'success'; result: MultichannelGenerationResponse }
+    | { type: 'replace-platform'; platform: Platform; generation: GenerationResponse }
     | { type: 'error'; error: string }
     | { type: 'reset' },
 ): GenerationState {
@@ -127,6 +163,10 @@ export function generationReducer(
       return { status: 'loading', result: null, error: null }
     case 'success':
       return { status: 'success', result: action.result, error: null }
+    case 'replace-platform':
+      return _state.result === null
+        ? _state
+        : { ..._state, result: replacePlatformGeneration(_state.result, action.platform, action.generation) }
     case 'error':
       return { status: 'error', result: null, error: action.error }
     case 'reset':

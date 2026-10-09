@@ -28,6 +28,36 @@ describe('MAREA API client', () => {
     await expect(createApiClient().getHealth(fetcher)).rejects.toBeInstanceOf(ApiConnectionError)
   })
 
+  it('lists configured public model options without exposing credentials', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify([
+      { selection: 'primary', provider: 'groq', model: 'openai/gpt-oss-20b', processing_location: 'external' },
+      { selection: 'secondary', provider: 'groq', model: 'qwen/qwen3.8-27b', processing_location: 'external' },
+      { selection: 'tertiary', provider: 'groq', model: 'openai/gpt-oss-120b', processing_location: 'external' },
+    ]), { status: 200 }))
+
+    const models = await createApiClient('http://localhost:8000').getGenerationModels(fetcher)
+
+    expect(fetcher).toHaveBeenCalledWith('http://localhost:8000/generation/models')
+    expect(models).toHaveLength(3)
+    expect(models[1]).toMatchObject({ selection: 'secondary', model: 'qwen/qwen3.8-27b' })
+  })
+
+  it('keeps catalog loading errors recoverable and does not expose response details', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      detail: 'private upstream detail',
+    }), { status: 500 }))
+
+    await expect(createApiClient().getGenerationModels(fetcher)).rejects.toBeInstanceOf(ApiConnectionError)
+  })
+
+  it('rejects malformed model catalog data instead of rendering unknown selections', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify([
+      { selection: 'automatic', provider: 'groq', model: 'unverified', processing_location: 'external' },
+    ]), { status: 200 }))
+
+    await expect(createApiClient().getGenerationModels(fetcher)).rejects.toBeInstanceOf(ApiConnectionError)
+  })
+
   it('sends a structured generation request and returns the normalized response', async () => {
     const body = {
       topic: 'Explicar MAREA',
@@ -35,6 +65,7 @@ describe('MAREA API client', () => {
       audience: 'Personas no técnicas',
       tone: 'Cercano y profesional',
       language: 'es',
+      model_selection: 'primary' as const,
       platform: 'linkedin' as const,
       niches: [],
     }
@@ -62,7 +93,51 @@ describe('MAREA API client', () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 502 }))
 
     await expect(createApiClient().generateContent({
-      topic: 'Tema', objective: 'Informar', audience: 'Audiencia', tone: 'Claro', language: 'es', platform: 'blog', niches: [],
+      topic: 'Tema', objective: 'Informar', audience: 'Audiencia', tone: 'Claro', language: 'es', model_selection: 'primary', platform: 'blog', niches: [],
     }, fetcher)).rejects.toBeInstanceOf(GenerationRequestError)
+  })
+
+  it('sends every selected platform to the multichannel endpoint', async () => {
+    const body = {
+      topic: 'Explicar MAREA', objective: 'Divulgación', audience: 'Personas no técnicas', tone: 'Cercano y profesional', language: 'es', model_selection: 'primary' as const, niches: [], platforms: ['linkedin', 'blog'] as Array<'linkedin' | 'blog'>,
+    }
+    const generated = {
+      results: [
+        { status: 'success', platform: 'linkedin', generation: { text: 'LinkedIn', provider: 'fake', model: 'fake-model', processing_location: 'external', trace: { prompt_version: 'v7', context: { ...body, platform: 'linkedin', subniche: null, additional_context: null, profile_context: null } }, guardrails: { findings: [], review_required: false } } },
+        { status: 'error', platform: 'blog', error: { code: 'provider_request_failed', detail: 'Error seguro.' } },
+      ],
+    }
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(generated), { status: 200 }))
+
+    const response = await createApiClient('http://localhost:8000/').generateMultichannelContent(body, fetcher)
+
+    expect(fetcher).toHaveBeenCalledWith('http://localhost:8000/generation/multichannel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    expect(response).toEqual(generated)
+  })
+
+  it('shows a recognized safe multichannel error from the backend contract', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      code: 'provider_not_configured',
+      detail: 'La generación aún no está configurada. Revisa el proveedor y el modelo.',
+    }), { status: 503 }))
+
+    await expect(createApiClient().generateMultichannelContent({
+      topic: 'Tema', objective: 'Informar', audience: 'Audiencia', tone: 'Claro', language: 'es', model_selection: 'primary', niches: [], platforms: ['linkedin'],
+    }, fetcher)).rejects.toThrow('La generación aún no está configurada. Revisa el proveedor y el modelo.')
+  })
+
+  it('keeps the generic message for an unexpected multichannel error response', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      code: 'internal_exception',
+      detail: 'Traceback: private implementation detail',
+    }), { status: 500 }))
+
+    await expect(createApiClient().generateMultichannelContent({
+      topic: 'Tema', objective: 'Informar', audience: 'Audiencia', tone: 'Claro', language: 'es', model_selection: 'primary', niches: [], platforms: ['instagram'],
+    }, fetcher)).rejects.toThrow('No se ha podido generar el borrador. Inténtalo de nuevo.')
   })
 })

@@ -1,6 +1,7 @@
 export const platforms = ['linkedin', 'instagram', 'facebook', 'blog'] as const
 
 export type Platform = (typeof platforms)[number]
+export type ModelSelection = 'primary' | 'secondary' | 'tertiary'
 
 export type GenerationRequest = {
   topic: string
@@ -8,10 +9,15 @@ export type GenerationRequest = {
   audience: string
   tone: string
   language: string
+  model_selection: ModelSelection
   platform: Platform
   niches: string[]
   subniche?: string
   additional_context?: string
+}
+
+export type MultichannelGenerationRequest = Omit<GenerationRequest, 'platform'> & {
+  platforms: Platform[]
 }
 
 export type GenerationTrace = {
@@ -44,12 +50,39 @@ export type GenerationResponse = {
   guardrails: GuardrailAssessment
 }
 
+export type AvailableGenerationModel = {
+  selection: ModelSelection
+  provider: string
+  model: string
+  processing_location: ProcessingLocation
+}
+
+export type SuccessfulPlatformGeneration = {
+  status: 'success'
+  platform: Platform
+  generation: GenerationResponse
+}
+
+export type FailedPlatformGeneration = {
+  status: 'error'
+  platform: Platform
+  error: {
+    code: string
+    detail: string
+  }
+}
+
+export type MultichannelGenerationResponse = {
+  results: Array<SuccessfulPlatformGeneration | FailedPlatformGeneration>
+}
+
 export type GenerationFormValues = {
   topic: string
   objective: string
   audience: string
   tone: string
   language: string
+  modelSelection: ModelSelection
   additionalContext: string
   niches: string[]
   subniche: string

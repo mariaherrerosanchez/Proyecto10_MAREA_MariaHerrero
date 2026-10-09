@@ -2,36 +2,58 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { GenerationFeedback } from './GenerationFeedback'
+import { initialResultPlatform, shouldInitializeResultTab } from './resultTabs'
 
 describe('GenerationFeedback', () => {
   it('keeps the draft and the general review notice visible when guardrails are absent', () => {
     const markup = renderToStaticMarkup(
       <GenerationFeedback
+        draftReviews={{}}
         generation={{
           status: 'success',
           error: null,
           result: {
-            text: 'Borrador que sigue disponible.',
-            provider: 'proveedor',
-            model: 'modelo',
-            processing_location: undefined,
-            trace: {
-              prompt_version: 'v7',
-              context: {
-                topic: 'Tema',
-                objective: 'Informar',
-                audience: 'Audiencia',
-                tone: 'Claro',
-                language: 'es',
+            results: [
+              {
+                status: 'success',
                 platform: 'blog',
-                niches: [],
-                subniche: null,
-                additional_context: null,
-                profile_context: null,
+                generation: {
+                  text: 'Borrador que sigue disponible.',
+                  provider: 'proveedor',
+                  model: 'modelo',
+                  processing_location: undefined,
+                  trace: {
+                    prompt_version: 'v7',
+                    context: {
+                      topic: 'Tema',
+                      objective: 'Informar',
+                      audience: 'Audiencia',
+                      tone: 'Claro',
+                      language: 'es',
+                      model_selection: 'primary',
+                      platform: 'blog',
+                      niches: [],
+                      subniche: null,
+                      additional_context: null,
+                      profile_context: null,
+                    },
+                  },
+                },
               },
-            },
+              {
+                status: 'error',
+                platform: 'linkedin',
+                error: { code: 'provider_request_failed', detail: 'Error seguro.' },
+              },
+            ],
           },
         }}
+        initialPlatform="blog"
+        onBeginEdit={() => undefined}
+        onConfirmReview={() => undefined}
+        onDraftChange={() => undefined}
+        onRegenerate={() => undefined}
+        regenerations={{}}
       />,
     )
 
@@ -39,5 +61,31 @@ describe('GenerationFeedback', () => {
     expect(markup).toContain('la decisión editorial siempre es tuya')
     expect(markup).toContain('NO DISPONIBLE')
     expect(markup).not.toContain('han señalado posibles afirmaciones')
+    expect(markup).toContain('role="tablist"')
+    expect(markup).toContain('Blog')
+    expect(markup).toContain('LinkedIn')
+    expect(markup).toContain('Editar borrador')
+    expect(markup).toContain('Confirmar revisión')
+    expect(markup).toContain('Regenerar borrador')
+    expect(markup).toContain('Copiar texto')
+    expect(markup).toContain('Descargar .txt')
+    expect(markup).toContain('Confirma la revisión para habilitar la copia y la descarga.')
+    expect(markup).not.toContain('Publicar')
+  })
+
+  it('uses the active platform when available and falls back to the first result', () => {
+    const result = {
+      results: [
+        { status: 'error' as const, platform: 'instagram' as const, error: { code: 'error', detail: 'Error.' } },
+        { status: 'error' as const, platform: 'blog' as const, error: { code: 'error', detail: 'Error.' } },
+      ],
+    }
+
+    expect(initialResultPlatform(result, 'blog')).toBe('blog')
+    expect(initialResultPlatform(result, 'linkedin')).toBe('instagram')
+  })
+
+  it('does not reset the selected Instagram tab when regeneration replaces an existing result', () => {
+    expect(shouldInitializeResultTab(true, true)).toBe(false)
   })
 })
