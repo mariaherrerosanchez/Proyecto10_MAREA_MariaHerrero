@@ -97,6 +97,18 @@ Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/generation `
 
 La respuesta incluye temporalmente una traza con la versión de prompt y el contexto usado. Aún no se persiste; la persistencia de trazabilidad pertenece a historias posteriores. Las pruebas automatizadas no contactan con Groq ni requieren una clave real.
 
+### Radar RSS (MVP)
+
+El backend expone `GET /radar/news` para consultar señales de actualidad procedentes exclusivamente de una lista cerrada de fuentes RSS públicas verificadas. La configuración usa identificadores —no URLs arbitrarias— en `RADAR_RSS_SOURCES`; por defecto incluye los feeds oficiales de [Tecnología](https://elpais.com/info/rss/) y Ciencia de EL PAÍS. Cada resultado conserva titular, fuente, fecha de publicación cuando existe, enlace original y fecha de consulta. No descarga artículos completos, no consulta redes sociales ni envía noticias a un LLM.
+
+Los errores de una fuente no bloquean las demás: la respuesta incluye el estado seguro de cada origen y puede devolver una lista vacía cuando ninguna esté disponible. Estas noticias son señales de actualidad, no tendencias verificadas ni contenido generado; el filtrado por nichos, perfil y competencias pertenece a una fase posterior del Radar.
+
+### Radar RSS (MVP)
+
+El backend expone `GET /radar/news` para consultar señales de actualidad procedentes exclusivamente de una lista cerrada de fuentes RSS públicas verificadas. La configuración usa identificadores —no URLs arbitrarias— en `RADAR_RSS_SOURCES`; por defecto incluye los feeds oficiales de [Tecnología](https://elpais.com/info/rss/) y Ciencia de EL PAÍS. Cada resultado conserva titular, fuente, fecha de publicación cuando existe, enlace original y fecha de consulta. No descarga artículos completos, no consulta redes sociales ni envía noticias a un LLM.
+
+Los errores de una fuente no bloquean las demás: la respuesta incluye el estado seguro de cada origen y puede devolver una lista vacía cuando ninguna esté disponible. Estas noticias son señales de actualidad, no tendencias verificadas ni contenido generado; el filtrado por nichos, perfil y competencias pertenece a una fase posterior del Radar.
+
 ## Ejecutar con Docker Compose
 
 El entorno Docker del MVP contiene únicamente dos servicios: el backend FastAPI y el frontend estático. No inicia bases de datos, Chroma, Ollama ni otros servicios que todavía no utiliza la aplicación.
