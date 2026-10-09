@@ -95,6 +95,58 @@ Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/generation `
 
 La respuesta incluye temporalmente una traza con la versión de prompt y el contexto usado. Aún no se persiste; la persistencia de trazabilidad pertenece a historias posteriores. Las pruebas automatizadas no contactan con Groq ni requieren una clave real.
 
+## Ejecutar con Docker Compose
+
+El entorno Docker del MVP contiene únicamente dos servicios: el backend FastAPI y el frontend estático. No inicia bases de datos, Chroma, Ollama ni otros servicios que todavía no utiliza la aplicación.
+
+### Preparación
+
+Se necesita Docker Desktop en ejecución. Crea el archivo privado de configuración a partir de la plantilla y completa la configuración de Groq solo si quieres ejecutar una generación real:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+En `.env`, configura `LLM_PROVIDER=groq`, `GROQ_MODEL` y `GROQ_API_KEY`. Este archivo está ignorado por Git, se inyecta únicamente en tiempo de ejecución del servicio backend y nunca se copia a una imagen Docker. No incluyas claves en `VITE_API_BASE_URL` ni en ninguna variable `VITE_*`: esas variables son públicas y se compilan en el navegador.
+
+Por defecto, el frontend se compila para usar `http://localhost:8001`. Si necesitas otra URL pública de API, define `VITE_API_BASE_URL` antes de construir; el cambio exige reconstruir el frontend.
+
+### Construcción y arranque
+
+Desde la raíz del repositorio:
+
+```powershell
+docker compose build
+docker compose up -d
+docker compose ps
+```
+
+El frontend estará disponible en `http://localhost:8080` y el backend Docker en `http://localhost:8001`. Dentro de la red Docker, Uvicorn sigue escuchando en el puerto 8000. El backend restringe CORS al origen Docker del frontend (`http://localhost:8080`). El navegador accede al backend mediante `localhost`, no mediante el nombre interno del servicio Docker.
+
+### Validación
+
+Comprueba primero el healthcheck desde PowerShell:
+
+```powershell
+Invoke-RestMethod http://localhost:8001/health
+```
+
+Después abre `http://localhost:8080`, accede a **Crear** y verifica que el estado de servicio aparece disponible. Con Groq configurado explícitamente, la validación end-to-end manual consiste en generar un borrador para una o varias plataformas, editar o regenerar una pieza, confirmar su revisión y copiar o descargar el resultado. Esta prueba puede realizar una llamada externa a Groq; no forma parte de las pruebas automatizadas.
+
+Para detener únicamente el entorno de MAREA:
+
+```powershell
+docker compose down
+```
+
+### Problemas frecuentes
+
+- Si Docker Desktop no está iniciado, `docker compose build` no podrá crear las imágenes.
+- Si el puerto 8001 u 8080 está ocupado, libera el proceso local o ajusta el mapeo de puertos y el origen CORS de forma coherente.
+- Si la interfaz indica que el servicio no está disponible, comprueba `docker compose ps`, el healthcheck de `http://localhost:8001/health` y que el navegador se ha abierto en `http://localhost:8080`.
+- Si la generación devuelve un error controlado, revisa que `LLM_PROVIDER`, `GROQ_MODEL` y `GROQ_API_KEY` estén configurados en `.env`; no incluyas ni compartas el valor de la clave en logs o capturas.
+- Si cambia `VITE_API_BASE_URL`, reconstruye el servicio frontend para generar un nuevo bundle.
+
 ## Roadmap
 
 | Nivel | Alcance |
