@@ -23,6 +23,7 @@ export function createRegenerationRequest(
     audience: request.audience,
     tone: request.tone,
     language: request.language,
+    model_selection: request.model_selection,
     niches: request.niches,
     ...(request.subniche === undefined ? {} : { subniche: request.subniche }),
     ...(request.additional_context === undefined ? {} : { additional_context: request.additional_context }),

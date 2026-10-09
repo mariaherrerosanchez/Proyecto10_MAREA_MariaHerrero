@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from app.api.dependencies import get_generation_service
+from app.api.dependencies import GenerationServiceFactory, get_generation_service_factory
 from app.generation.errors import GenerationUnavailableError
 from app.generation.service import (
     FailedPlatformGeneration,
@@ -15,6 +15,7 @@ from app.generation.service import (
     SuccessfulPlatformGeneration,
 )
 from app.guardrails.personal_facts import GuardrailAssessment
+from app.llm.factory import ProviderConfigurationError
 from app.llm.provider import ProviderInvocationError
 from app.prompts.models import (
     GenerationContext,
@@ -37,6 +38,15 @@ class GenerationResponseBody(BaseModel):
     processing_location: Literal["local", "external"]
     trace: PromptTrace
     guardrails: GuardrailAssessment
+
+
+class AvailableGenerationModelBody(BaseModel):
+    """A public, selectable configured model without private credentials."""
+
+    selection: Literal["primary", "secondary", "tertiary"]
+    provider: str
+    model: str
+    processing_location: Literal["local", "external"]
 
 
 class MultichannelGenerationErrorBody(BaseModel):
@@ -71,12 +81,14 @@ class MultichannelGenerationResponseBody(BaseModel):
 @router.post("", response_model=GenerationResponseBody)
 def generate_text(
     request: GenerationContext,
-    service: Annotated[GenerationService, Depends(get_generation_service)],
+    factory: Annotated[GenerationServiceFactory, Depends(get_generation_service_factory)],
 ) -> GenerationResponseBody:
     """Generate text from an already-built raw prompt."""
 
     try:
-        result = service.generate(request)
+        result = factory.create(request.model_selection).generate(request)
+    except ProviderConfigurationError:
+        raise
     except ProviderInvocationError:
         raise
     except Exception as error:
@@ -92,12 +104,14 @@ def generate_text(
 @router.post("/multichannel", response_model=MultichannelGenerationResponseBody)
 def generate_multichannel_text(
     request: MultichannelGenerationRequest,
-    service: Annotated[GenerationService, Depends(get_generation_service)],
+    factory: Annotated[GenerationServiceFactory, Depends(get_generation_service_factory)],
 ) -> MultichannelGenerationResponseBody:
     """Generate independent drafts in the received platform order."""
 
     try:
-        results = service.generate_many(request)
+        results = factory.create(request.model_selection).generate_many(request)
+    except ProviderConfigurationError:
+        raise
     except Exception as error:
         logger.error(
             "Unexpected multichannel generation service error",
@@ -108,6 +122,34 @@ def generate_multichannel_text(
     return MultichannelGenerationResponseBody(
         results=[_multichannel_result_body(result) for result in results]
     )
+
+
+@router.get("/models", response_model=list[AvailableGenerationModelBody])
+def get_available_models(
+    factory: Annotated[GenerationServiceFactory, Depends(get_generation_service_factory)],
+) -> list[AvailableGenerationModelBody]:
+    """List selectable configured models without constructing clients or exposing secrets."""
+
+    try:
+        configurations = factory.available_models()
+    except ProviderConfigurationError:
+        raise
+    except Exception as error:
+        logger.error(
+            "Unable to resolve configured generation models",
+            extra={"error_type": type(error).__name__},
+        )
+        raise GenerationUnavailableError() from error
+
+    return [
+        AvailableGenerationModelBody(
+            selection=configuration.selection,
+            provider=configuration.metadata.provider,
+            model=configuration.metadata.model,
+            processing_location=configuration.metadata.processing_location,
+        )
+        for configuration in configurations
+    ]
 
 
 def _generation_response_body(result: StructuredGenerationResult) -> GenerationResponseBody:

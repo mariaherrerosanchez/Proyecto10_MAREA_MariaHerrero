@@ -30,6 +30,7 @@ describe('GenerationFeedback', () => {
                       audience: 'Audiencia',
                       tone: 'Claro',
                       language: 'es',
+                      model_selection: 'primary',
                       platform: 'blog',
                       niches: [],
                       subniche: null,

@@ -6,6 +6,8 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.llm.types import ModelSelection
+
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -32,6 +34,14 @@ class Settings(BaseSettings):
     llm_provider: str | None = Field(default=None, validation_alias="LLM_PROVIDER")
     groq_api_key: str | None = Field(default=None, validation_alias="GROQ_API_KEY")
     groq_model: str | None = Field(default=None, validation_alias="GROQ_MODEL")
+    groq_secondary_model: str | None = Field(
+        default=None,
+        validation_alias="GROQ_MODEL_SECONDARY",
+    )
+    groq_tertiary_model: str | None = Field(
+        default=None,
+        validation_alias="GROQ_MODEL_TERTIARY",
+    )
     openrouter_api_key: str | None = Field(default=None, validation_alias="OPENROUTER_API_KEY")
     openrouter_model: str | None = Field(default=None, validation_alias="OPENROUTER_MODEL")
     ollama_base_url: str = Field(default="http://localhost:11434", validation_alias="OLLAMA_BASE_URL")
@@ -51,11 +61,21 @@ class Settings(BaseSettings):
 
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
-    def model_for_provider(self, provider: str) -> str | None:
+    def model_for_provider(
+        self,
+        provider: str,
+        selection: ModelSelection = "primary",
+    ) -> str | None:
         """Return the configured model for a supported provider name."""
 
+        if provider == "groq":
+            return {
+                "primary": self.groq_model,
+                "secondary": self.groq_secondary_model,
+                "tertiary": self.groq_tertiary_model,
+            }[selection]
+
         return {
-            "groq": self.groq_model,
             "openrouter": self.openrouter_model,
             "ollama": self.ollama_model,
         }.get(provider)

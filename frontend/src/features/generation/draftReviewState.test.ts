@@ -18,7 +18,7 @@ const result: MultichannelGenerationResponse = {
       platform: 'linkedin',
       generation: {
         text: 'Borrador de LinkedIn.', provider: 'fake', model: 'fake-model', processing_location: 'external',
-        trace: { prompt_version: 'v7', context: { topic: 'Tema', objective: 'Informar', audience: 'Audiencia', tone: 'Claro', language: 'es', platform: 'linkedin', niches: [], subniche: null, additional_context: null, profile_context: null } },
+        trace: { prompt_version: 'v7', context: { topic: 'Tema', objective: 'Informar', audience: 'Audiencia', tone: 'Claro', language: 'es', model_selection: 'primary', platform: 'linkedin', niches: [], subniche: null, additional_context: null, profile_context: null } },
         guardrails: { findings: [], review_required: false },
       },
     },
@@ -27,7 +27,7 @@ const result: MultichannelGenerationResponse = {
       platform: 'instagram',
       generation: {
         text: 'Borrador de Instagram.', provider: 'fake', model: 'fake-model', processing_location: 'external',
-        trace: { prompt_version: 'v7', context: { topic: 'Tema', objective: 'Informar', audience: 'Audiencia', tone: 'Claro', language: 'es', platform: 'instagram', niches: [], subniche: null, additional_context: null, profile_context: null } },
+        trace: { prompt_version: 'v7', context: { topic: 'Tema', objective: 'Informar', audience: 'Audiencia', tone: 'Claro', language: 'es', model_selection: 'primary', platform: 'instagram', niches: [], subniche: null, additional_context: null, profile_context: null } },
         guardrails: { findings: [], review_required: false },
       },
     },

@@ -36,7 +36,7 @@ const response: GenerationResponse = {
     prompt_version: 'v7',
     context: {
       topic: 'Tema', objective: 'Informar', audience: 'Audiencia', tone: 'Claro', language: 'es', platform: 'blog',
-      niches: [], subniche: null, additional_context: null, profile_context: null,
+      model_selection: 'primary', niches: [], subniche: null, additional_context: null, profile_context: null,
     },
   },
   guardrails: { findings: [], review_required: false },
@@ -63,7 +63,7 @@ describe('generation form state', () => {
 
   it('serializes optional fields only when they contain meaningful values', () => {
     expect(serializeGenerationRequest(validValues())).toEqual({
-      topic: 'Explicar innovación con tildes', objective: 'Divulgación', audience: 'Profesionales no técnicos', tone: 'Cercano y profesional', language: 'es', platform: 'linkedin', niches: [],
+      topic: 'Explicar innovación con tildes', objective: 'Divulgación', audience: 'Profesionales no técnicos', tone: 'Cercano y profesional', language: 'es', model_selection: 'primary', platform: 'linkedin', niches: [],
     })
     expect(serializeGenerationRequest({ ...validValues(), niches: ['Inteligencia Artificial', 'QA / Testing'], subniche: ' IA ', additionalContext: 'Usa un ejemplo.' })).toMatchObject({
       niches: ['Inteligencia Artificial', 'QA / Testing'], subniche: 'IA', additional_context: 'Usa un ejemplo.',
@@ -71,8 +71,11 @@ describe('generation form state', () => {
   })
 
   it('serializes every selected platform for multichannel generation', () => {
-    expect(serializeMultichannelGenerationRequest(validValues())).toMatchObject({
+    const values = { ...validValues(), modelSelection: 'tertiary' as const }
+
+    expect(serializeMultichannelGenerationRequest(values)).toMatchObject({
       platforms: ['linkedin', 'blog'],
+      model_selection: 'tertiary',
       niches: [],
     })
     expect(() => serializeMultichannelGenerationRequest(initialFormValues)).toThrow()

@@ -8,6 +8,8 @@ from app.core.config import Settings
 OPTIONAL_CONFIGURATION_ENV_VARS = (
     "GROQ_API_KEY",
     "GROQ_MODEL",
+    "GROQ_MODEL_SECONDARY",
+    "GROQ_MODEL_TERTIARY",
     "OPENROUTER_API_KEY",
     "OPENROUTER_MODEL",
     "OLLAMA_MODEL",
@@ -28,6 +30,8 @@ def test_settings_read_environment_configuration(monkeypatch) -> None:
     monkeypatch.setenv("DATABASE_URL", "sqlite:///./test.db")
     monkeypatch.setenv("GROQ_API_KEY", "groq-test-key")
     monkeypatch.setenv("GROQ_MODEL", "llama-test")
+    monkeypatch.setenv("GROQ_MODEL_SECONDARY", "qwen-test")
+    monkeypatch.setenv("GROQ_MODEL_TERTIARY", "gpt-oss-test")
     monkeypatch.setenv("OPENROUTER_API_KEY", "openrouter-test-key")
     monkeypatch.setenv("OPENROUTER_MODEL", "openrouter-test-model")
     monkeypatch.setenv("OLLAMA_BASE_URL", "http://ollama.test:11434")
@@ -48,6 +52,8 @@ def test_settings_read_environment_configuration(monkeypatch) -> None:
     assert settings.database_url == "sqlite:///./test.db"
     assert settings.groq_api_key == "groq-test-key"
     assert settings.groq_model == "llama-test"
+    assert settings.groq_secondary_model == "qwen-test"
+    assert settings.groq_tertiary_model == "gpt-oss-test"
     assert settings.openrouter_api_key == "openrouter-test-key"
     assert settings.openrouter_model == "openrouter-test-model"
     assert settings.ollama_base_url == "http://ollama.test:11434"
@@ -67,6 +73,8 @@ def test_settings_allow_missing_optional_credentials(monkeypatch) -> None:
     assert settings.database_url == "sqlite:///./marea.db"
     assert settings.groq_api_key is None
     assert settings.groq_model is None
+    assert settings.groq_secondary_model is None
+    assert settings.groq_tertiary_model is None
     assert settings.openrouter_api_key is None
     assert settings.openrouter_model is None
     assert settings.ollama_base_url == "http://localhost:11434"

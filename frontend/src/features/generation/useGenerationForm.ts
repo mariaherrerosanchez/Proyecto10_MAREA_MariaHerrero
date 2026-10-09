@@ -1,6 +1,11 @@
-import { useReducer, useRef, useState } from 'react'
+import { useCallback, useReducer, useRef, useState } from 'react'
 
-import type { GenerationFormValues, MultichannelGenerationRequest, Platform } from '../../generation/types'
+import type {
+  AvailableGenerationModel,
+  GenerationFormValues,
+  MultichannelGenerationRequest,
+  Platform,
+} from '../../generation/types'
 import { createApiClient } from '../../services/api'
 import {
   beginDraftEdit,
@@ -43,6 +48,8 @@ export function useGenerationForm() {
   const [draftReviews, setDraftReviews] = useState<DraftReviewState>({})
   const [originalRequest, setOriginalRequest] = useState<MultichannelGenerationRequest | null>(null)
   const [regenerations, setRegenerations] = useState<PlatformRegenerationState>({})
+  const [generationModels, setGenerationModels] = useState<AvailableGenerationModel[]>([])
+  const [generationModelsError, setGenerationModelsError] = useState<string | null>(null)
   const regeneratingPlatforms = useRef(new Set<Platform>())
 
   function updateField<Field extends Exclude<keyof GenerationFormValues, 'niches' | 'selectedPlatforms' | 'activePlatform'>>(
@@ -77,6 +84,21 @@ export function useGenerationForm() {
   function selectAll() {
     setValues((current) => selectAllPlatforms(current))
   }
+
+  const loadGenerationModels = useCallback(async () => {
+    try {
+      const models = await createApiClient().getGenerationModels()
+      setGenerationModels(models)
+      setGenerationModelsError(null)
+      setValues((current) => models.some((model) => model.selection === current.modelSelection)
+        ? current
+        : { ...current, modelSelection: models[0]?.selection ?? 'primary' })
+    } catch {
+      setGenerationModelsError(
+        'No se ha podido cargar la lista de modelos. Se usará el modelo predeterminado.',
+      )
+    }
+  }, [])
 
   function beginEditingDraft(platform: Platform) {
     setDraftReviews((current) => beginDraftEdit(current, platform))
@@ -175,6 +197,9 @@ export function useGenerationForm() {
     updateDraft,
     confirmDraftReview,
     regenerations,
+    generationModels,
+    generationModelsError,
+    loadGenerationModels,
     regenerationInProgress: hasRegenerationInProgress(regenerations),
     regeneratePlatform,
     submit,
