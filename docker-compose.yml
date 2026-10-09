@@ -1,0 +1,26 @@
+name: marea
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      APP_ENV: docker
+      BACKEND_CORS_ORIGINS: http://localhost:8080
+    ports:
+      - "127.0.0.1:8001:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8001}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:80"
