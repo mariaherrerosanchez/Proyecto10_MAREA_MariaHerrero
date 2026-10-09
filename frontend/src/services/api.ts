@@ -1,4 +1,10 @@
-import type { GenerationRequest, GenerationResponse, MultichannelGenerationRequest, MultichannelGenerationResponse } from '../generation/types'
+import type {
+  AvailableGenerationModel,
+  GenerationRequest,
+  GenerationResponse,
+  MultichannelGenerationRequest,
+  MultichannelGenerationResponse,
+} from '../generation/types'
 
 export type HealthResponse = {
   status: string
@@ -21,6 +27,28 @@ type MultichannelErrorCode = (typeof multichannelErrorCodes)[number]
 type SafeMultichannelError = {
   code: MultichannelErrorCode
   detail: string
+}
+
+const modelSelections = ['primary', 'secondary', 'tertiary'] as const
+
+function isAvailableGenerationModel(value: unknown): value is AvailableGenerationModel {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+
+  const { selection, provider, model, processing_location: processingLocation } = value as {
+    selection?: unknown
+    provider?: unknown
+    model?: unknown
+    processing_location?: unknown
+  }
+
+  return modelSelections.some((knownSelection) => knownSelection === selection)
+    && typeof provider === 'string'
+    && provider.length > 0
+    && typeof model === 'string'
+    && model.length > 0
+    && (processingLocation === 'local' || processingLocation === 'external')
 }
 
 export class ApiConnectionError extends Error {
@@ -92,6 +120,26 @@ export function createApiClient(apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?
       }
 
       return (await response.json()) as GenerationResponse
+    },
+    async getGenerationModels(fetcher: Fetcher = fetch): Promise<AvailableGenerationModel[]> {
+      let response: Response
+
+      try {
+        response = await fetcher(`${baseUrl}/generation/models`)
+      } catch {
+        throw new ApiConnectionError()
+      }
+
+      if (!response.ok) {
+        throw new ApiConnectionError()
+      }
+
+      const body: unknown = await response.json()
+      if (!Array.isArray(body) || !body.every(isAvailableGenerationModel)) {
+        throw new ApiConnectionError()
+      }
+
+      return body
     },
     async generateMultichannelContent(
       request: MultichannelGenerationRequest,

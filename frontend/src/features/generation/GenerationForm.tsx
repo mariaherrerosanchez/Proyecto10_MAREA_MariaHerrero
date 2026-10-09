@@ -1,5 +1,6 @@
-import type { FormEvent } from 'react'
+import { useEffect, type FormEvent } from 'react'
 
+import type { AvailableGenerationModel, ModelSelection } from '../../generation/types'
 import { languageOptions, objectiveOptions, toneOptions } from './constants'
 import { GenerationFeedback } from './GenerationFeedback'
 import { NicheFields } from './NicheFields'
@@ -25,8 +26,15 @@ export function GenerationForm() {
     regenerations,
     regenerationInProgress,
     regeneratePlatform,
+    generationModels,
+    generationModelsError,
+    loadGenerationModels,
     submit,
   } = useGenerationForm()
+
+  useEffect(() => {
+    void loadGenerationModels()
+  }, [loadGenerationModels])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -76,6 +84,12 @@ export function GenerationForm() {
             {errors.audience ? <small className="form-error" id="audience-error">{errors.audience}</small> : null}
           </label>
           <SelectField error={errors.language} id="language" label="Idioma" onChange={(value) => updateField('language', value)} options={languageOptions} value={values.language} />
+          <ModelSelector
+            error={generationModelsError}
+            models={generationModels}
+            onChange={(value) => updateField('modelSelection', value)}
+            value={values.modelSelection}
+          />
           <label className="form-field form-field--wide" htmlFor="additional-context">
             <span>Contexto adicional <em>Opcional</em></span>
             <textarea
@@ -132,6 +146,36 @@ type SelectFieldProps = {
   onChange: (value: string) => void
   options: readonly string[] | readonly { value: string; label: string }[]
   value: string
+}
+
+type ModelSelectorProps = {
+  error: string | null
+  models: AvailableGenerationModel[]
+  onChange: (value: ModelSelection) => void
+  value: ModelSelection
+}
+
+function ModelSelector({ error, models, onChange, value }: ModelSelectorProps) {
+  return (
+    <label className="form-field" htmlFor="model-selection">
+      <span>Modelo de IA</span>
+      <select
+        aria-describedby={error ? 'model-selection-help' : undefined}
+        id="model-selection"
+        name="model-selection"
+        onChange={(event) => onChange(event.target.value as ModelSelection)}
+        value={value}
+      >
+        {models.length === 0 ? <option value="primary">Modelo predeterminado</option> : null}
+        {models.map((model) => (
+          <option key={model.selection} value={model.selection}>
+            {model.provider} · {model.model}
+          </option>
+        ))}
+      </select>
+      {error ? <small className="form-error" id="model-selection-help">{error}</small> : null}
+    </label>
+  )
 }
 
 function SelectField({ error, id, label, onChange, options, value }: SelectFieldProps) {

@@ -5,7 +5,7 @@ from enum import StrEnum
 
 from app.core.config import Settings
 from app.llm.provider import LLMProvider
-from app.llm.types import ProcessingLocation, ProviderMetadata
+from app.llm.types import ModelSelection, ProcessingLocation, ProviderMetadata
 
 
 class SupportedProvider(StrEnum):
@@ -37,14 +37,18 @@ class ResolvedProviderConfiguration:
     """The provider/model pair selected by private backend configuration."""
 
     provider: SupportedProvider
+    selection: ModelSelection
     metadata: ProviderMetadata
 
 
-def resolve_provider_configuration(settings: Settings) -> ResolvedProviderConfiguration:
+def resolve_provider_configuration(
+    settings: Settings,
+    selection: ModelSelection = "primary",
+) -> ResolvedProviderConfiguration:
     """Resolve a supported provider and its configured model without creating a client."""
 
     provider = _resolve_provider_name(settings.llm_provider)
-    model = settings.model_for_provider(provider.value)
+    model = settings.model_for_provider(provider.value, selection)
     if not model or not model.strip():
         raise ProviderConfigurationError(
             f"No model is configured for provider '{provider.value}'."
@@ -52,6 +56,7 @@ def resolve_provider_configuration(settings: Settings) -> ResolvedProviderConfig
 
     return ResolvedProviderConfiguration(
         provider=provider,
+        selection=selection,
         metadata=ProviderMetadata(
             provider=provider.value,
             model=model,
@@ -60,10 +65,31 @@ def resolve_provider_configuration(settings: Settings) -> ResolvedProviderConfig
     )
 
 
-def create_llm_provider(settings: Settings) -> LLMProvider:
+def available_model_configurations(settings: Settings) -> tuple[ResolvedProviderConfiguration, ...]:
+    """Return each configured Groq slot without constructing a provider client."""
+
+    primary = resolve_provider_configuration(settings)
+    if primary.provider is not SupportedProvider.GROQ:
+        raise ProviderNotImplementedError(
+            f"The '{primary.provider.value}' provider is not integrated yet."
+        )
+
+    configurations = [primary]
+    for selection in ("secondary", "tertiary"):
+        try:
+            configurations.append(resolve_provider_configuration(settings, selection))
+        except ProviderConfigurationError:
+            continue
+    return tuple(configurations)
+
+
+def create_llm_provider(
+    settings: Settings,
+    selection: ModelSelection = "primary",
+) -> LLMProvider:
     """Build only the provider clients available in the current application version."""
 
-    configuration = resolve_provider_configuration(settings)
+    configuration = resolve_provider_configuration(settings, selection)
     if configuration.provider is SupportedProvider.GROQ:
         from app.llm.groq_provider import create_groq_provider
 

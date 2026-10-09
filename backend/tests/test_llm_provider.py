@@ -11,6 +11,7 @@ from app.core.config import Settings
 from app.llm.factory import (
     ProviderConfigurationError,
     UnsupportedProviderError,
+    available_model_configurations,
     resolve_provider_configuration,
 )
 from app.llm.langchain_provider import LangChainLLMProvider
@@ -68,6 +69,34 @@ def test_factory_resolves_selected_provider_and_its_model() -> None:
         model="openrouter/test-model",
         processing_location="external",
     )
+
+
+def test_factory_resolves_each_configured_groq_selection() -> None:
+    settings = Settings(
+        _env_file=None,
+        LLM_PROVIDER="groq",
+        GROQ_MODEL="openai/gpt-oss-20b",
+        GROQ_MODEL_SECONDARY="qwen/qwen3.8-27b",
+        GROQ_MODEL_TERTIARY="openai/gpt-oss-120b",
+    )
+
+    configurations = available_model_configurations(settings)
+
+    assert [(configuration.selection, configuration.metadata.model) for configuration in configurations] == [
+        ("primary", "openai/gpt-oss-20b"),
+        ("secondary", "qwen/qwen3.8-27b"),
+        ("tertiary", "openai/gpt-oss-120b"),
+    ]
+
+
+def test_factory_omits_unconfigured_optional_groq_selections() -> None:
+    settings = Settings(_env_file=None, LLM_PROVIDER="groq", GROQ_MODEL="configured-model")
+
+    configurations = available_model_configurations(settings)
+
+    assert [(configuration.selection, configuration.metadata.model) for configuration in configurations] == [
+        ("primary", "configured-model"),
+    ]
 
 
 @pytest.mark.parametrize(

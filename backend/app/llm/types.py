@@ -7,6 +7,7 @@ from langchain_core.messages import BaseMessage
 
 
 ProcessingLocation = Literal["local", "external"]
+ModelSelection = Literal["primary", "secondary", "tertiary"]
 
 
 @dataclass(frozen=True, slots=True)

@@ -4,6 +4,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
+from app.llm.types import ModelSelection
+
 RequiredText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 Platform = Literal["linkedin", "instagram", "facebook", "blog"]
 
@@ -26,6 +28,7 @@ class GenerationRequestContext(BaseModel):
     audience: RequiredText
     tone: RequiredText
     language: RequiredText
+    model_selection: ModelSelection = "primary"
     niches: list[RequiredText] = Field(default_factory=list)
     subniche: str | None = None
     additional_context: str | None = None

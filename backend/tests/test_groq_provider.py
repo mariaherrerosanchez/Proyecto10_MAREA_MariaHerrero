@@ -11,7 +11,7 @@ from app.llm.factory import (
     resolve_provider_configuration,
 )
 from app.llm.groq_provider import create_groq_provider
-from app.llm.types import LLMRequest, ProviderMetadata
+from app.llm.types import LLMRequest, ModelSelection, ProviderMetadata
 
 
 class FakeChatGroq:
@@ -46,6 +46,38 @@ def test_groq_provider_uses_model_and_key_from_private_settings(monkeypatch) -> 
     )
     assert FakeChatGroq.last_created_with == {
         "model": "configured-model",
+        "api_key": "test-private-key",
+    }
+
+
+@pytest.mark.parametrize(
+    ("selection", "expected_model"),
+    [
+        ("primary", "primary-model"),
+        ("secondary", "secondary-model"),
+        ("tertiary", "tertiary-model"),
+    ],
+)
+def test_groq_provider_uses_the_requested_configured_model_slot(
+    monkeypatch,
+    selection: ModelSelection,
+    expected_model: str,
+) -> None:
+    monkeypatch.setattr("app.llm.groq_provider.ChatGroq", FakeChatGroq)
+    settings = Settings(
+        _env_file=None,
+        LLM_PROVIDER="groq",
+        GROQ_MODEL="primary-model",
+        GROQ_MODEL_SECONDARY="secondary-model",
+        GROQ_MODEL_TERTIARY="tertiary-model",
+        GROQ_API_KEY="test-private-key",
+    )
+
+    provider = create_llm_provider(settings, selection)
+
+    assert provider.metadata.model == expected_model
+    assert FakeChatGroq.last_created_with == {
+        "model": expected_model,
         "api_key": "test-private-key",
     }
 

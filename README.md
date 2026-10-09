@@ -68,9 +68,11 @@ La configuración del navegador se mantiene separada en `frontend/.env.local`, c
 
 Las variables con prefijo `VITE_` se incluyen en el bundle del navegador y son públicas. Nunca deben contener API keys, credenciales, URLs de base de datos, secretos de sesión ni otra información sensible.
 
-### Groq local (US-008)
+### Groq local y selección de modelo (US-008, US-023)
 
-El primer proveedor integrado es Groq. Para activarlo localmente, copia `.env.example` a `.env` y configura únicamente en ese archivo privado `LLM_PROVIDER=groq`, `GROQ_MODEL` y `GROQ_API_KEY`. No se versiona la clave ni se expone mediante `VITE_*`.
+El proveedor integrado es Groq. Para activarlo localmente, copia `.env.example` a `.env` y configura únicamente en ese archivo privado `LLM_PROVIDER=groq`, `GROQ_MODEL` y `GROQ_API_KEY`. `GROQ_MODEL` es el modelo predeterminado y la plantilla propone `openai/gpt-oss-120b`. Puedes habilitar hasta dos opciones adicionales con `GROQ_MODEL_SECONDARY` y `GROQ_MODEL_TERTIARY` después de verificar que estén disponibles para tu cuenta de Groq. La pantalla **Crear** muestra solo los modelos que el backend tenga configurados, usando sus identificadores reales y sin exponer credenciales.
+
+No se versiona la clave ni se expone mediante `VITE_*`. Cada generación, generación multicanal y regeneración conserva la selección solicitada y devuelve el proveedor y modelo efectivos en su traza temporal.
 
 Para una comprobación manual —no ejecutada por la suite— inicia el backend desde `backend/`:
 
@@ -107,7 +109,7 @@ Se necesita Docker Desktop en ejecución. Crea el archivo privado de configuraci
 Copy-Item .env.example .env
 ```
 
-En `.env`, configura `LLM_PROVIDER=groq`, `GROQ_MODEL` y `GROQ_API_KEY`. Este archivo está ignorado por Git, se inyecta únicamente en tiempo de ejecución del servicio backend y nunca se copia a una imagen Docker. No incluyas claves en `VITE_API_BASE_URL` ni en ninguna variable `VITE_*`: esas variables son públicas y se compilan en el navegador.
+En `.env`, configura `LLM_PROVIDER=groq`, `GROQ_MODEL` y `GROQ_API_KEY`. `GROQ_MODEL` es el predeterminado; `GROQ_MODEL_SECONDARY` y `GROQ_MODEL_TERTIARY` son opcionales y deben contener solo modelos previamente verificados para la cuenta de Groq. Este archivo está ignorado por Git, se inyecta únicamente en tiempo de ejecución del servicio backend y nunca se copia a una imagen Docker. No incluyas claves en `VITE_API_BASE_URL` ni en ninguna variable `VITE_*`: esas variables son públicas y se compilan en el navegador.
 
 Por defecto, el frontend se compila para usar `http://localhost:8001`. Si necesitas otra URL pública de API, define `VITE_API_BASE_URL` antes de construir; el cambio exige reconstruir el frontend.
 
@@ -144,7 +146,7 @@ docker compose down
 - Si Docker Desktop no está iniciado, `docker compose build` no podrá crear las imágenes.
 - Si el puerto 8001 u 8080 está ocupado, libera el proceso local o ajusta el mapeo de puertos y el origen CORS de forma coherente.
 - Si la interfaz indica que el servicio no está disponible, comprueba `docker compose ps`, el healthcheck de `http://localhost:8001/health` y que el navegador se ha abierto en `http://localhost:8080`.
-- Si la generación devuelve un error controlado, revisa que `LLM_PROVIDER`, `GROQ_MODEL` y `GROQ_API_KEY` estén configurados en `.env`; no incluyas ni compartas el valor de la clave en logs o capturas.
+- Si la generación devuelve un error controlado, revisa que `LLM_PROVIDER`, `GROQ_MODEL` y `GROQ_API_KEY` estén configurados en `.env`. Si una opción adicional no aparece en **Crear**, revisa sin compartir secretos que su variable `GROQ_MODEL_SECONDARY` o `GROQ_MODEL_TERTIARY` no esté vacía y que ese modelo esté disponible para tu cuenta. No incluyas ni compartas el valor de la clave en logs o capturas.
 - Si cambia `VITE_API_BASE_URL`, reconstruye el servicio frontend para generar un nuevo bundle.
 
 ## Roadmap
