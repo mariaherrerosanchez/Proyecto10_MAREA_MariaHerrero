@@ -5,6 +5,7 @@ import type {
   MultichannelGenerationRequest,
   MultichannelGenerationResponse,
 } from '../generation/types'
+import type { RadarNewsResponse } from '../radar/types'
 
 export type HealthResponse = {
   status: string
@@ -65,6 +66,13 @@ export class GenerationRequestError extends Error {
   }
 }
 
+export class RadarRequestError extends Error {
+  constructor() {
+    super('No se han podido cargar las noticias ahora. Inténtalo de nuevo.')
+    this.name = 'RadarRequestError'
+  }
+}
+
 function isSafeMultichannelError(value: unknown): value is SafeMultichannelError {
   if (typeof value !== 'object' || value === null) {
     return false
@@ -72,6 +80,61 @@ function isSafeMultichannelError(value: unknown): value is SafeMultichannelError
 
   const { code, detail } = value as { code?: unknown; detail?: unknown }
   return typeof detail === 'string' && multichannelErrorCodes.some((knownCode) => knownCode === code)
+}
+
+function isRadarNewsResponse(value: unknown): value is RadarNewsResponse {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+
+  const { items, sources, fetched_at: fetchedAt } = value as Record<string, unknown>
+  return Array.isArray(items)
+    && Array.isArray(sources)
+    && typeof fetchedAt === 'string'
+    && items.every((item) => isRadarNewsItem(item))
+    && sources.every((source) => isRadarSourceStatus(source))
+}
+
+function isRadarNewsItem(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+
+  const item = value as Record<string, unknown>
+  return typeof item.title === 'string'
+    && typeof item.source_id === 'string'
+    && typeof item.source_name === 'string'
+    && (typeof item.published_at === 'string' || item.published_at === null)
+    && isHttpUrl(item.original_url)
+    && typeof item.fetched_at === 'string'
+}
+
+function isHttpUrl(value: unknown): boolean {
+  if (typeof value !== 'string') {
+    return false
+  }
+
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' || url.protocol === 'http:'
+  } catch {
+    return false
+  }
+}
+
+function isRadarSourceStatus(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+
+  const source = value as Record<string, unknown>
+  return typeof source.source_id === 'string'
+    && typeof source.source_name === 'string'
+    && (source.status === 'success' || source.status === 'error')
+    && typeof source.fetched_at === 'string'
+    && (source.error_code === null
+      || source.error_code === 'source_unavailable'
+      || source.error_code === 'source_configuration_invalid')
 }
 
 async function readSafeMultichannelError(response: Response): Promise<string | undefined> {
@@ -137,6 +200,31 @@ export function createApiClient(apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?
       const body: unknown = await response.json()
       if (!Array.isArray(body) || !body.every(isAvailableGenerationModel)) {
         throw new ApiConnectionError()
+      }
+
+      return body
+    },
+    async getRadarNews(fetcher: Fetcher = fetch): Promise<RadarNewsResponse> {
+      let response: Response
+
+      try {
+        response = await fetcher(`${baseUrl}/radar/news`)
+      } catch {
+        throw new RadarRequestError()
+      }
+
+      if (!response.ok) {
+        throw new RadarRequestError()
+      }
+
+      let body: unknown
+      try {
+        body = await response.json()
+      } catch {
+        throw new RadarRequestError()
+      }
+      if (!isRadarNewsResponse(body)) {
+        throw new RadarRequestError()
       }
 
       return body

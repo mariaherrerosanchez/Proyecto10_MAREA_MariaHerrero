@@ -1,13 +1,17 @@
 import { useEffect, type FormEvent } from 'react'
 
-import type { AvailableGenerationModel, ModelSelection } from '../../generation/types'
+import type { AvailableGenerationModel, GenerationFormPrefill, ModelSelection } from '../../generation/types'
 import { languageOptions, objectiveOptions, toneOptions } from './constants'
 import { GenerationFeedback } from './GenerationFeedback'
 import { NicheFields } from './NicheFields'
 import { PlatformSelector } from './PlatformSelector'
 import { useGenerationForm } from './useGenerationForm'
 
-export function GenerationForm() {
+type GenerationFormProps = {
+  prefill?: GenerationFormPrefill
+}
+
+export function GenerationForm({ prefill }: GenerationFormProps) {
   const {
     values,
     errors,
@@ -30,7 +34,7 @@ export function GenerationForm() {
     generationModelsError,
     loadGenerationModels,
     submit,
-  } = useGenerationForm()
+  } = useGenerationForm(prefill)
 
   useEffect(() => {
     void loadGenerationModels()

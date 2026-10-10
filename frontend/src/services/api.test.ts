@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { ApiConnectionError, createApiClient, GenerationRequestError } from './api'
+import { ApiConnectionError, createApiClient, GenerationRequestError, RadarRequestError } from './api'
 
 describe('MAREA API client', () => {
   it('consults the backend health endpoint and returns its response', async () => {
@@ -56,6 +56,50 @@ describe('MAREA API client', () => {
     ]), { status: 200 }))
 
     await expect(createApiClient().getGenerationModels(fetcher)).rejects.toBeInstanceOf(ApiConnectionError)
+  })
+
+  it('retrieves validated Radar RSS metadata without treating it as generated content', async () => {
+    const radarResponse = {
+      items: [{
+        title: 'Titular RSS',
+        source_id: 'elpais-tecnologia',
+        source_name: 'EL PAÍS · Tecnología',
+        published_at: '2026-10-10T08:00:00Z',
+        original_url: 'https://elpais.com/tecnologia/example.html',
+        fetched_at: '2026-10-10T09:00:00Z',
+      }],
+      sources: [{
+        source_id: 'elpais-tecnologia',
+        source_name: 'EL PAÍS · Tecnología',
+        status: 'success',
+        fetched_at: '2026-10-10T09:00:00Z',
+        error_code: null,
+      }],
+      fetched_at: '2026-10-10T09:00:00Z',
+    }
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(radarResponse), { status: 200 }))
+
+    await expect(createApiClient('http://localhost:8000').getRadarNews(fetcher)).resolves.toEqual(radarResponse)
+    expect(fetcher).toHaveBeenCalledWith('http://localhost:8000/radar/news')
+  })
+
+  it('keeps Radar errors recoverable when its response is malformed or unavailable', async () => {
+    const malformedFetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), { status: 200 }))
+    const unavailableFetcher = vi.fn().mockResolvedValue(new Response(null, { status: 503 }))
+    const invalidJsonFetcher = vi.fn().mockResolvedValue(new Response('{', { status: 200 }))
+    const unsafeUrlFetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [{
+        title: 'Unsafe', source_id: 'elpais-tecnologia', source_name: 'EL PAÍS · Tecnología',
+        published_at: null, original_url: 'javascript:alert(1)', fetched_at: '2026-10-10T09:00:00Z',
+      }],
+      sources: [],
+      fetched_at: '2026-10-10T09:00:00Z',
+    }), { status: 200 }))
+
+    await expect(createApiClient().getRadarNews(malformedFetcher)).rejects.toBeInstanceOf(RadarRequestError)
+    await expect(createApiClient().getRadarNews(unavailableFetcher)).rejects.toBeInstanceOf(RadarRequestError)
+    await expect(createApiClient().getRadarNews(invalidJsonFetcher)).rejects.toBeInstanceOf(RadarRequestError)
+    await expect(createApiClient().getRadarNews(unsafeUrlFetcher)).rejects.toBeInstanceOf(RadarRequestError)
   })
 
   it('sends a structured generation request and returns the normalized response', async () => {
