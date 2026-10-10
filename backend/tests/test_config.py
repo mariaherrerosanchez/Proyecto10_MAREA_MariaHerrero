@@ -28,6 +28,9 @@ def test_settings_read_environment_configuration(monkeypatch) -> None:
         "http://localhost:5173,https://marea.example",
     )
     monkeypatch.setenv("DATABASE_URL", "sqlite:///./test.db")
+    monkeypatch.setenv("RADAR_RSS_SOURCES", "elpais-tecnologia,elpais-ciencia")
+    monkeypatch.setenv("RADAR_REQUEST_TIMEOUT_SECONDS", "2.5")
+    monkeypatch.setenv("RADAR_MAX_FEED_BYTES", "4096")
     monkeypatch.setenv("GROQ_API_KEY", "groq-test-key")
     monkeypatch.setenv("GROQ_MODEL", "llama-test")
     monkeypatch.setenv("GROQ_MODEL_SECONDARY", "qwen-test")
@@ -50,6 +53,9 @@ def test_settings_read_environment_configuration(monkeypatch) -> None:
     assert settings.port == 9000
     assert settings.allowed_origins == ["http://localhost:5173", "https://marea.example"]
     assert settings.database_url == "sqlite:///./test.db"
+    assert settings.radar_source_ids == ("elpais-tecnologia", "elpais-ciencia")
+    assert settings.radar_request_timeout_seconds == 2.5
+    assert settings.radar_max_feed_bytes == 4096
     assert settings.groq_api_key == "groq-test-key"
     assert settings.groq_model == "llama-test"
     assert settings.groq_secondary_model == "qwen-test"
@@ -71,6 +77,9 @@ def test_settings_allow_missing_optional_credentials(monkeypatch) -> None:
     settings = Settings(_env_file=None)
 
     assert settings.database_url == "sqlite:///./marea.db"
+    assert settings.radar_source_ids == ("elpais-tecnologia", "elpais-ciencia")
+    assert settings.radar_request_timeout_seconds == 5.0
+    assert settings.radar_max_feed_bytes == 1_000_000
     assert settings.groq_api_key is None
     assert settings.groq_model is None
     assert settings.groq_secondary_model is None
