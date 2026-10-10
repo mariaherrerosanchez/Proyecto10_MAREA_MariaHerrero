@@ -89,3 +89,5 @@ export type GenerationFormValues = {
   selectedPlatforms: Platform[]
   activePlatform: Platform | null
 }
+
+export type GenerationFormPrefill = Pick<GenerationFormValues, 'topic' | 'additionalContext'>
