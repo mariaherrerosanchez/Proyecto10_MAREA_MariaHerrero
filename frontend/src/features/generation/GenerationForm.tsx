@@ -6,12 +6,14 @@ import { GenerationFeedback } from './GenerationFeedback'
 import { NicheFields } from './NicheFields'
 import { PlatformSelector } from './PlatformSelector'
 import { useGenerationForm } from './useGenerationForm'
+import { useGenerationDraft } from './GenerationDraftContext'
 
 type GenerationFormProps = {
   prefill?: GenerationFormPrefill
 }
 
 export function GenerationForm({ prefill }: GenerationFormProps) {
+  const { draft, setDraft } = useGenerationDraft()
   const {
     values,
     errors,
@@ -34,11 +36,15 @@ export function GenerationForm({ prefill }: GenerationFormProps) {
     generationModelsError,
     loadGenerationModels,
     submit,
-  } = useGenerationForm(prefill)
+  } = useGenerationForm(prefill, draft)
 
   useEffect(() => {
     void loadGenerationModels()
   }, [loadGenerationModels])
+
+  useEffect(() => {
+    setDraft(values)
+  }, [setDraft, values])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()

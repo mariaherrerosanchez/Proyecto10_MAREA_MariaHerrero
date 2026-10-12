@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, HttpUrl
 
+from app.radar.sources import SourceKind
+
 
 class RadarNewsItem(BaseModel):
     """A source-attributed RSS headline; it is not generated content."""
@@ -14,6 +16,7 @@ class RadarNewsItem(BaseModel):
     title: str
     source_id: str
     source_name: str
+    source_kind: SourceKind = "verified_feed"
     published_at: datetime | None
     original_url: HttpUrl
     fetched_at: datetime
@@ -26,6 +29,7 @@ class RadarSourceStatus(BaseModel):
 
     source_id: str
     source_name: str
+    source_kind: SourceKind = "verified_feed"
     status: Literal["success", "error"]
     fetched_at: datetime
     error_code: Literal["source_unavailable", "source_configuration_invalid"] | None = None

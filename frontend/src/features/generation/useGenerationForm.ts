@@ -21,7 +21,7 @@ import {
 import {
   generationReducer,
   addNiche,
-  initialFormValues,
+  createInitialFormValues,
   initialGenerationState,
   serializeMultichannelGenerationRequest,
   selectAllPlatforms,
@@ -42,11 +42,11 @@ import {
 
 const fallbackError = 'No se ha podido generar el borrador. Inténtalo de nuevo.'
 
-export function useGenerationForm(prefill?: GenerationFormPrefill) {
-  const [values, setValues] = useState<GenerationFormValues>(() => ({
-    ...initialFormValues,
-    ...prefill,
-  }))
+export function useGenerationForm(
+  prefill: GenerationFormPrefill | undefined,
+  sessionDraft: GenerationFormValues,
+) {
+  const [values, setValues] = useState<GenerationFormValues>(() => createInitialFormValues(prefill, sessionDraft))
   const [errors, setErrors] = useState<FormErrors>({})
   const [generation, dispatch] = useReducer(generationReducer, initialGenerationState)
   const [draftReviews, setDraftReviews] = useState<DraftReviewState>({})
