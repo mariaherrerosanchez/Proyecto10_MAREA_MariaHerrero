@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from app.radar.rss_client import RssFeedClient, RssFeedError
-from app.radar.sources import RssSource, SOURCES_BY_ID
+from app.radar.sources import RssSource, SOURCES_BY_ID, google_news_source
 
 
 RSS_WITH_DATES = b"""<?xml version=\"1.0\"?>
@@ -72,3 +72,14 @@ def test_fetch_rejects_source_urls_outside_the_closed_https_registry() -> None:
 
     with pytest.raises(RssFeedError, match="not permitted"):
         client_for(httpx.Response(200)).fetch(untrusted_source)
+
+
+def test_google_news_source_encodes_a_term_in_a_closed_internal_endpoint() -> None:
+    source = google_news_source("IA & QA", 1)
+
+    assert source.source_id == "google-news-1"
+    assert source.source_kind == "search_aggregator"
+    assert source.allowed_host == "news.google.com"
+    assert source.feed_url == (
+        "https://news.google.com/rss/search?q=IA+%26+QA&hl=es&gl=ES&ceid=ES%3Aes"
+    )

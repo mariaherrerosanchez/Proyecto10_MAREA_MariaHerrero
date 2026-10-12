@@ -6,12 +6,15 @@ import {
   filterRadarNews,
   formatRadarPublicationDate,
   isRadarInspiration,
+  radarSourceKindLabel,
+  selectRadarSearchTopics,
 } from './radarNews'
 
 const technologyNews: RadarNewsItem = {
   title: 'Un titular sobre tecnología',
   source_id: 'elpais-tecnologia',
   source_name: 'EL PAÍS · Tecnología',
+  source_kind: 'verified_feed',
   published_at: '2026-10-10T08:00:00Z',
   original_url: 'https://elpais.com/tecnologia/example.html',
   fetched_at: '2026-10-10T09:00:00Z',
@@ -47,5 +50,19 @@ describe('Radar news helpers', () => {
     expect(inspiration.additionalContext).toContain(technologyNews.original_url)
     expect(isRadarInspiration(inspiration)).toBe(true)
     expect(isRadarInspiration({ topic: technologyNews.title })).toBe(false)
+  })
+
+  it('prioritizes subniche and selects at most two normalized search topics', () => {
+    expect(selectRadarSearchTopics(
+      ['Inteligencia Artificial', 'QA / Testing', 'inteligencia artificial'],
+      'Evaluación de sistemas de IA',
+    )).toEqual(['Evaluación de sistemas de IA', 'Inteligencia Artificial'])
+  })
+
+  it('labels configured feeds and search aggregators without presenting either as a verified trend', () => {
+    expect(radarSourceKindLabel(technologyNews)).toBe('Fuente RSS general')
+    expect(radarSourceKindLabel({ source_kind: 'search_aggregator' })).toBe(
+      'Google News · resultados de búsqueda',
+    )
   })
 })

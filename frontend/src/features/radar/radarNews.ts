@@ -13,6 +13,30 @@ export function filterRadarNews(items: RadarNewsItem[], filter: RadarFilter): Ra
   return items.filter((item) => item.source_id === sourceFilters[filter])
 }
 
+export function selectRadarSearchTopics(niches: string[], subniche: string): string[] {
+  const candidates = [subniche, ...niches]
+  const selected: string[] = []
+
+  for (const candidate of candidates) {
+    const normalized = candidate.trim().replace(/\s+/g, ' ')
+    if (!normalized || selected.some((topic) => topic.localeCompare(normalized, 'es', { sensitivity: 'accent' }) === 0)) {
+      continue
+    }
+    selected.push(normalized)
+    if (selected.length === 2) {
+      break
+    }
+  }
+
+  return selected
+}
+
+export function radarSourceKindLabel(item: Pick<RadarNewsItem, 'source_kind'>): string {
+  return item.source_kind === 'search_aggregator'
+    ? 'Google News · resultados de búsqueda'
+    : 'Fuente RSS general'
+}
+
 export function formatRadarPublicationDate(publishedAt: string | null): string | null {
   if (publishedAt === null) {
     return null

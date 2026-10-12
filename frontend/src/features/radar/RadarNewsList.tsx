@@ -1,11 +1,12 @@
 import type { RadarFilter, RadarNewsItem, RadarSourceStatus } from '../../radar/types'
-import { formatRadarPublicationDate } from './radarNews'
+import { formatRadarPublicationDate, radarSourceKindLabel } from './radarNews'
 
 type RadarNewsListProps = {
   filter: RadarFilter
   items: RadarNewsItem[]
   onFilterChange: (filter: RadarFilter) => void
   onUseInspiration: (item: RadarNewsItem) => void
+  showFilters: boolean
   sourceStatuses: RadarSourceStatus[]
 }
 
@@ -20,27 +21,30 @@ export function RadarNewsList({
   items,
   onFilterChange,
   onUseInspiration,
+  showFilters,
   sourceStatuses,
 }: RadarNewsListProps) {
   const unavailableSources = sourceStatuses.filter((source) => source.status === 'error')
 
   return (
     <>
-      <div className="radar-toolbar">
-        <div className="radar-filters" aria-label="Filtrar noticias">
-          {filterOptions.map((option) => (
-            <button
-              aria-pressed={filter === option.value}
-              className={`radar-filter${filter === option.value ? ' radar-filter--active' : ''}`}
-              key={option.value}
-              onClick={() => onFilterChange(option.value)}
-              type="button"
-            >
-              {option.label}
-            </button>
-          ))}
+      {showFilters ? (
+        <div className="radar-toolbar">
+          <div className="radar-filters" aria-label="Filtrar noticias">
+            {filterOptions.map((option) => (
+              <button
+                aria-pressed={filter === option.value}
+                className={`radar-filter${filter === option.value ? ' radar-filter--active' : ''}`}
+                key={option.value}
+                onClick={() => onFilterChange(option.value)}
+                type="button"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {unavailableSources.length > 0 ? (
         <p className="radar-source-alert" role="status">
@@ -57,6 +61,9 @@ export function RadarNewsList({
         <div className="radar-news-grid">
           {items.map((item) => (
             <article className="radar-news-card" key={`${item.source_id}-${item.original_url}`}>
+              <p className={`radar-news-card__kind radar-news-card__kind--${item.source_kind}`}>
+                {radarSourceKindLabel(item)}
+              </p>
               <p className="radar-news-card__source">{item.source_name}</p>
               <h2>{item.title}</h2>
               <p className="radar-news-card__date">

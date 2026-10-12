@@ -104,6 +104,7 @@ function isRadarNewsItem(value: unknown): boolean {
   return typeof item.title === 'string'
     && typeof item.source_id === 'string'
     && typeof item.source_name === 'string'
+    && (item.source_kind === 'verified_feed' || item.source_kind === 'search_aggregator')
     && (typeof item.published_at === 'string' || item.published_at === null)
     && isHttpUrl(item.original_url)
     && typeof item.fetched_at === 'string'
@@ -130,6 +131,7 @@ function isRadarSourceStatus(value: unknown): boolean {
   const source = value as Record<string, unknown>
   return typeof source.source_id === 'string'
     && typeof source.source_name === 'string'
+    && (source.source_kind === 'verified_feed' || source.source_kind === 'search_aggregator')
     && (source.status === 'success' || source.status === 'error')
     && typeof source.fetched_at === 'string'
     && (source.error_code === null
@@ -204,11 +206,14 @@ export function createApiClient(apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?
 
       return body
     },
-    async getRadarNews(fetcher: Fetcher = fetch): Promise<RadarNewsResponse> {
+    async getRadarNews(topics: string[] = [], fetcher: Fetcher = fetch): Promise<RadarNewsResponse> {
       let response: Response
+      const query = new URLSearchParams()
+      topics.forEach((topic) => query.append('topics', topic))
+      const requestUrl = `${baseUrl}/radar/news${query.size > 0 ? `?${query}` : ''}`
 
       try {
-        response = await fetcher(`${baseUrl}/radar/news`)
+        response = await fetcher(requestUrl)
       } catch {
         throw new RadarRequestError()
       }

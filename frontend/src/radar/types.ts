@@ -2,6 +2,7 @@ export type RadarNewsItem = {
   title: string
   source_id: string
   source_name: string
+  source_kind: 'verified_feed' | 'search_aggregator'
   published_at: string | null
   original_url: string
   fetched_at: string
@@ -10,6 +11,7 @@ export type RadarNewsItem = {
 export type RadarSourceStatus = {
   source_id: string
   source_name: string
+  source_kind: 'verified_feed' | 'search_aggregator'
   status: 'success' | 'error'
   fetched_at: string
   error_code: 'source_unavailable' | 'source_configuration_invalid' | null
