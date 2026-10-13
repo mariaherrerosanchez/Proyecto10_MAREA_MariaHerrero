@@ -6,6 +6,7 @@ import type {
   MultichannelGenerationResponse,
 } from '../generation/types'
 import type { RadarNewsResponse } from '../radar/types'
+import type { StockImageSearchResponse } from '../images/types'
 
 export type HealthResponse = {
   status: string
@@ -73,6 +74,13 @@ export class RadarRequestError extends Error {
   }
 }
 
+export class ImageSearchRequestError extends Error {
+  constructor(message = 'No se han podido buscar imágenes ahora. Inténtalo de nuevo.') {
+    super(message)
+    this.name = 'ImageSearchRequestError'
+  }
+}
+
 function isSafeMultichannelError(value: unknown): value is SafeMultichannelError {
   if (typeof value !== 'object' || value === null) {
     return false
@@ -137,6 +145,32 @@ function isRadarSourceStatus(value: unknown): boolean {
     && (source.error_code === null
       || source.error_code === 'source_unavailable'
       || source.error_code === 'source_configuration_invalid')
+}
+
+function isStockImageSearchResponse(value: unknown): value is StockImageSearchResponse {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  const { items, provider } = value as Record<string, unknown>
+  return (provider === 'pexels' || provider === 'demo')
+    && Array.isArray(items)
+    && items.every((item) => isStockImage(item))
+}
+
+function isStockImage(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  const image = value as Record<string, unknown>
+  return typeof image.identifier === 'string'
+    && typeof image.thumbnail_url === 'string'
+    && typeof image.display_url === 'string'
+    && typeof image.author_name === 'string'
+    && typeof image.original_url === 'string'
+    && (image.provider === 'pexels' || image.provider === 'demo')
+    && isHttpUrl(image.thumbnail_url)
+    && isHttpUrl(image.display_url)
+    && isHttpUrl(image.original_url)
 }
 
 async function readSafeMultichannelError(response: Response): Promise<string | undefined> {
@@ -232,6 +266,34 @@ export function createApiClient(apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?
         throw new RadarRequestError()
       }
 
+      return body
+    },
+    async searchStockImages(query: string, fetcher: Fetcher = fetch): Promise<StockImageSearchResponse> {
+      let response: Response
+      const search = query.trim()
+      if (!search) {
+        throw new ImageSearchRequestError('Introduce una consulta para buscar imágenes.')
+      }
+
+      try {
+        response = await fetcher(`${baseUrl}/images/search?${new URLSearchParams({ query: search })}`)
+      } catch {
+        throw new ImageSearchRequestError()
+      }
+
+      if (!response.ok) {
+        throw new ImageSearchRequestError()
+      }
+
+      let body: unknown
+      try {
+        body = await response.json()
+      } catch {
+        throw new ImageSearchRequestError()
+      }
+      if (!isStockImageSearchResponse(body)) {
+        throw new ImageSearchRequestError()
+      }
       return body
     },
     async generateMultichannelContent(

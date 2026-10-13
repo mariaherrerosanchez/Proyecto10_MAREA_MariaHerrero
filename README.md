@@ -123,6 +123,16 @@ Copy-Item .env.example .env
 
 En `.env`, configura `LLM_PROVIDER=groq`, `GROQ_MODEL` y `GROQ_API_KEY`. `GROQ_MODEL` es el predeterminado; `GROQ_MODEL_SECONDARY` y `GROQ_MODEL_TERTIARY` son opcionales y deben contener solo modelos previamente verificados para la cuenta de Groq. Este archivo está ignorado por Git, se inyecta únicamente en tiempo de ejecución del servicio backend y nunca se copia a una imagen Docker. No incluyas claves en `VITE_API_BASE_URL` ni en ninguna variable `VITE_*`: esas variables son públicas y se compilan en el navegador.
 
+La búsqueda opcional de fotografías de stock usa `PEXELS_API_KEY` únicamente en el backend. Tras confirmar la revisión de una pieza, **Buscar imagen** envía solo la consulta editable a Pexels; no envía el borrador, perfiles ni contexto adicional. También se puede **Subir imagen** desde el equipo: acepta PNG, JPG o WebP de hasta 5 MB y crea una vista previa local sin enviar el archivo a MAREA ni a proveedores externos. Ambas selecciones, su atribución y enlace original cuando corresponda se mantienen solo durante la sesión de navegador: no se descargan, publican ni almacenan en MAREA. Editar o regenerar la pieza desvincula su imagen para que pueda revisarse de nuevo.
+
+Si no hay una clave de Pexels disponible para una demostración local, configura explícitamente `IMAGE_SEARCH_PROVIDER=demo` en `.env` y recrea solo el backend:
+
+```powershell
+docker compose up -d --force-recreate backend
+```
+
+El modo demo no consulta Pexels ni realiza una búsqueda real: devuelve un catálogo estático de ejemplos con autoría y enlace original visibles. Sirve exclusivamente para comprobar el flujo de selección por plataforma; antes de utilizar una fotografía fuera de la demo, revisa su página original y las condiciones de uso aplicables.
+
 Por defecto, el frontend se compila para usar `http://localhost:8001`. Si necesitas otra URL pública de API, define `VITE_API_BASE_URL` antes de construir; el cambio exige reconstruir el frontend.
 
 ### Construcción y arranque

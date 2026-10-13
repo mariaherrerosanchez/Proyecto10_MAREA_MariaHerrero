@@ -85,6 +85,61 @@ describe('GenerationFeedback', () => {
     expect(initialResultPlatform(result, 'linkedin')).toBe('instagram')
   })
 
+  it('only exposes stock-image search after the platform review is confirmed', () => {
+    const generation = {
+      status: 'success' as const,
+      error: null,
+      result: {
+        results: [{
+          status: 'success' as const,
+          platform: 'linkedin' as const,
+          generation: {
+            text: 'Borrador revisado.', provider: 'proveedor', model: 'modelo', processing_location: 'external' as const,
+            trace: {
+              prompt_version: 'v7',
+              context: {
+                topic: 'Costa mediterránea', objective: 'Informar', audience: 'Audiencia', tone: 'Claro', language: 'es',
+                model_selection: 'primary' as const, platform: 'linkedin' as const, niches: ['Turismo'], subniche: null,
+                additional_context: null, profile_context: null,
+              },
+            },
+            guardrails: { findings: [], review_required: false },
+          },
+        }],
+      },
+    }
+    const commonProps = {
+      generation,
+      initialPlatform: 'linkedin' as const,
+      onBeginEdit: () => undefined,
+      onConfirmReview: () => undefined,
+      onDraftChange: () => undefined,
+      onRegenerate: () => undefined,
+      regenerations: {},
+    }
+
+    expect(renderToStaticMarkup(<GenerationFeedback {...commonProps} draftReviews={{}} />))
+      .not.toContain('Busca una fotografía')
+    expect(renderToStaticMarkup(<GenerationFeedback {...commonProps} draftReviews={{}} />))
+      .not.toContain('Subir imagen')
+    expect(renderToStaticMarkup(
+      <GenerationFeedback
+        {...commonProps}
+        draftReviews={{
+          linkedin: { originalText: 'Borrador revisado.', text: 'Borrador revisado.', reviewed: true },
+        }}
+      />,
+    )).toContain('Busca una fotografía')
+    expect(renderToStaticMarkup(
+      <GenerationFeedback
+        {...commonProps}
+        draftReviews={{
+          linkedin: { originalText: 'Borrador revisado.', text: 'Borrador revisado.', reviewed: true },
+        }}
+      />,
+    )).toContain('Subir imagen')
+  })
+
   it('does not reset the selected Instagram tab when regeneration replaces an existing result', () => {
     expect(shouldInitializeResultTab(true, true)).toBe(false)
   })

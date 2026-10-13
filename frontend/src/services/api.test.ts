@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { ApiConnectionError, createApiClient, GenerationRequestError, RadarRequestError } from './api'
+import {
+  ApiConnectionError,
+  createApiClient,
+  GenerationRequestError,
+  ImageSearchRequestError,
+  RadarRequestError,
+} from './api'
 
 describe('MAREA API client', () => {
   it('consults the backend health endpoint and returns its response', async () => {
@@ -113,6 +119,58 @@ describe('MAREA API client', () => {
     await expect(createApiClient().getRadarNews([], unavailableFetcher)).rejects.toBeInstanceOf(RadarRequestError)
     await expect(createApiClient().getRadarNews([], invalidJsonFetcher)).rejects.toBeInstanceOf(RadarRequestError)
     await expect(createApiClient().getRadarNews([], unsafeUrlFetcher)).rejects.toBeInstanceOf(RadarRequestError)
+  })
+
+  it('searches stock images only through the backend and validates public Pexels metadata', async () => {
+    const response = {
+      provider: 'pexels',
+      items: [{
+        identifier: '42',
+        thumbnail_url: 'https://images.pexels.com/photos/42/thumbnail.jpeg',
+        display_url: 'https://images.pexels.com/photos/42/display.jpeg',
+        author_name: 'Ada Fotógrafa',
+        original_url: 'https://www.pexels.com/photo/42/',
+        provider: 'pexels',
+      }],
+    }
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(response), { status: 200 }))
+
+    await expect(createApiClient('http://localhost:8000').searchStockImages('costa mediterránea', fetcher))
+      .resolves.toEqual(response)
+    expect(fetcher).toHaveBeenCalledWith(
+      'http://localhost:8000/images/search?query=costa+mediterr%C3%A1nea',
+    )
+  })
+
+  it('accepts explicitly labelled demo image results without accepting unknown providers', async () => {
+    const response = {
+      provider: 'demo',
+      items: [{
+        identifier: 'demo-42',
+        thumbnail_url: 'https://images.pexels.com/photos/42/thumbnail.jpeg',
+        display_url: 'https://images.pexels.com/photos/42/display.jpeg',
+        author_name: 'Ada Fotógrafa',
+        original_url: 'https://www.pexels.com/photo/42/',
+        provider: 'demo',
+      }],
+    }
+    const demoFetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(response), { status: 200 }))
+    const unknownFetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ...response, provider: 'unknown' }), { status: 200 }))
+
+    await expect(createApiClient().searchStockImages('costa', demoFetcher)).resolves.toEqual(response)
+    await expect(createApiClient().searchStockImages('costa', unknownFetcher))
+      .rejects.toBeInstanceOf(ImageSearchRequestError)
+  })
+
+  it('keeps stock image search failures recoverable without exposing a backend error', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      detail: 'private upstream response',
+    }), { status: 502 }))
+
+    await expect(createApiClient().searchStockImages('costa', fetcher))
+      .rejects.toBeInstanceOf(ImageSearchRequestError)
+    await expect(createApiClient().searchStockImages('   ', fetcher))
+      .rejects.toThrow('Introduce una consulta para buscar imágenes.')
   })
 
   it('sends a structured generation request and returns the normalized response', async () => {

@@ -11,9 +11,20 @@ import type { DraftReviewState, ReviewedDraft } from './draftReviewState'
 import type { PlatformRegenerationState } from './regenerationState'
 import { platformLabels } from './constants'
 import { DraftContent } from './DraftContent'
+import { ImageSearchPanel } from './ImageSearchPanel'
 import { copyDraftText, downloadDraftText } from './draftOutput'
 import { processingLocationLabel, reviewMessage } from './draftPresentation'
 import { initialResultPlatform, shouldInitializeResultTab } from './resultTabs'
+import {
+  clearStockImage,
+  selectStockImage,
+  selectUploadedImage,
+  suggestedImageQuery,
+  type SelectedContentImage,
+  type SelectedStockImages,
+  type UploadedImage,
+} from './stockImageState'
+import type { StockImage } from '../../images/types'
 
 type DraftPresentationResponse = Omit<SuccessfulPlatformGeneration['generation'], 'guardrails' | 'processing_location'> & {
   guardrails?: GuardrailAssessment | null
@@ -58,6 +69,8 @@ export function GenerationFeedback({
 }: GenerationFeedbackProps) {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(initialPlatform)
   const [outputFeedback, setOutputFeedback] = useState<Partial<Record<Platform, DraftOutputFeedback>>>({})
+  const [selectedImages, setSelectedImages] = useState<SelectedStockImages>({})
+  const [imageQueries, setImageQueries] = useState<Partial<Record<Platform, string>>>({})
   const hadGenerationResult = useRef(false)
   const tabRefs = useRef<Partial<Record<Platform, HTMLButtonElement>>>({})
 
@@ -68,6 +81,13 @@ export function GenerationFeedback({
     }
     hadGenerationResult.current = hasCurrentResult
   }, [generation.result, initialPlatform])
+
+  useEffect(() => {
+    if (generation.status === 'loading') {
+      setSelectedImages({})
+      setImageQueries({})
+    }
+  }, [generation.status])
 
   if (generation.status === 'idle') {
     return null
@@ -190,6 +210,7 @@ export function GenerationFeedback({
               key={activeResult.platform}
               onBeginEdit={(platform) => {
                 clearOutputFeedback(platform)
+                setSelectedImages((current) => clearStockImage(current, platform))
                 onBeginEdit(platform)
               }}
               onConfirmReview={onConfirmReview}
@@ -197,15 +218,35 @@ export function GenerationFeedback({
               onDownload={downloadDraft}
               onDraftChange={(platform, text) => {
                 clearOutputFeedback(platform)
+                setSelectedImages((current) => clearStockImage(current, platform))
                 onDraftChange(platform, text)
               }}
               onRegenerate={(platform) => {
                 clearOutputFeedback(platform)
+                setSelectedImages((current) => clearStockImage(current, platform))
                 onRegenerate(platform)
+              }}
+              imageQuery={imageQueries[activeResult.platform]
+                ?? suggestedImageQuery(
+                  activeResult.generation.trace.context.topic,
+                  activeResult.generation.trace.context.niches,
+                )}
+              onImageQueryChange={(platform, query) => {
+                setImageQueries((current) => ({ ...current, [platform]: query }))
+              }}
+              onSelectImage={(platform, image) => {
+                setSelectedImages((current) => selectStockImage(current, platform, image))
+              }}
+              onSelectUploadedImage={(platform, image) => {
+                setSelectedImages((current) => selectUploadedImage(current, platform, image))
+              }}
+              onRemoveImage={(platform) => {
+                setSelectedImages((current) => clearStockImage(current, platform))
               }}
               outputFeedback={outputFeedback[activeResult.platform]}
               platform={activeResult.platform}
               regeneration={regenerations[activeResult.platform]}
+              selectedImage={selectedImages[activeResult.platform]}
             />
           : <GenerationFailure
               error={activeResult}
@@ -230,9 +271,15 @@ type GeneratedDraftProps = {
   onDownload: (platform: Platform, text: string, topic: string) => void
   onDraftChange: (platform: Platform, text: string) => void
   onRegenerate: (platform: Platform) => void
+  imageQuery: string
+  onImageQueryChange: (platform: Platform, query: string) => void
+  onSelectImage: (platform: Platform, image: StockImage) => void
+  onSelectUploadedImage: (platform: Platform, image: UploadedImage) => void
+  onRemoveImage: (platform: Platform) => void
   outputFeedback: DraftOutputFeedback | undefined
   platform: Platform
   regeneration: PlatformRegenerationState[Platform]
+  selectedImage: SelectedContentImage | undefined
 }
 
 function GeneratedDraft({
@@ -244,9 +291,15 @@ function GeneratedDraft({
   onDownload,
   onDraftChange,
   onRegenerate,
+  imageQuery,
+  onImageQueryChange,
+  onSelectImage,
+  onSelectUploadedImage,
+  onRemoveImage,
   outputFeedback,
   platform,
   regeneration,
+  selectedImage,
 }: GeneratedDraftProps) {
   const [isEditing, setIsEditing] = useState(false)
   const guardrailReviewMessage = reviewMessage(generation.guardrails)
@@ -336,6 +389,16 @@ function GeneratedDraft({
         {outputFeedback?.status === 'success' ? <p className="generation-draft__output-message" role="status">{outputFeedback.message}</p> : null}
         {outputFeedback?.status === 'error' ? <p className="generation-feedback generation-feedback--error" role="alert">{outputFeedback.message}</p> : null}
       </div>
+      {draft.reviewed ? (
+        <ImageSearchPanel
+          onQueryChange={(query) => onImageQueryChange(platform, query)}
+          onSelect={(image) => onSelectImage(platform, image)}
+          onSelectUpload={(image) => onSelectUploadedImage(platform, image)}
+          onRemoveImage={() => onRemoveImage(platform)}
+          query={imageQuery}
+          selectedImage={selectedImage}
+        />
+      ) : null}
       <dl className="generation-draft__metadata">
         <div><dt>Proveedor</dt><dd>{generation.provider}</dd></div>
         <div><dt>Modelo</dt><dd>{generation.model}</dd></div>
