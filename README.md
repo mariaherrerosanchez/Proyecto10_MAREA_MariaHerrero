@@ -213,6 +213,10 @@ Completar el flujo mínimo de generación local y avanzar en perfiles, cuenta, p
 - Kanban de gestión mediante GitHub Projects.
 - Demo en vivo, presentación técnica y artículo publicado en Medium.
 
+## Artículo en Medium
+
+[MAREA: una idea que llega más lejos](https://medium.com/@mariaherrerosanchezgg/marea-una-idea-que-llega-m%C3%A1s-lejos-2084c1d55079)
+
 ## Autora
 
 **María Herrero**
