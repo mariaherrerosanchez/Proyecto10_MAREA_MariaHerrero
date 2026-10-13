@@ -2,6 +2,7 @@ export const platforms = ['linkedin', 'instagram', 'facebook', 'blog'] as const
 
 export type Platform = (typeof platforms)[number]
 export type ModelSelection = 'primary' | 'secondary' | 'tertiary'
+export type TranslationLanguage = 'en' | 'fr' | 'it'
 
 export type GenerationRequest = {
   topic: string
@@ -50,6 +51,20 @@ export type GenerationResponse = {
   guardrails: GuardrailAssessment
 }
 
+export type TranslationRequest = {
+  text: string
+  target_language: TranslationLanguage
+  model_selection: ModelSelection
+}
+
+export type TranslationResponse = {
+  text: string
+  target_language: TranslationLanguage
+  provider: string
+  model: string
+  processing_location: ProcessingLocation
+}
+
 export type AvailableGenerationModel = {
   selection: ModelSelection
   provider: string
@@ -89,3 +104,5 @@ export type GenerationFormValues = {
   selectedPlatforms: Platform[]
   activePlatform: Platform | null
 }
+
+export type GenerationFormPrefill = Pick<GenerationFormValues, 'topic' | 'additionalContext'>

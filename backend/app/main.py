@@ -5,7 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.errors import register_exception_handlers
 from app.api.generation import router as generation_router
+from app.api.images import router as images_router
 from app.api.radar import router as radar_router
+from app.api.translation import router as translation_router
 from app.core.config import Settings, get_settings
 
 
@@ -23,7 +25,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     register_exception_handlers(application)
     application.include_router(generation_router)
+    application.include_router(images_router)
     application.include_router(radar_router)
+    application.include_router(translation_router)
 
     if settings is not None:
         application.dependency_overrides[get_settings] = lambda: runtime_settings

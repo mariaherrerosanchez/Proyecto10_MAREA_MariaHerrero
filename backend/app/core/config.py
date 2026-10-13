@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -45,6 +46,17 @@ class Settings(BaseSettings):
         ge=1_024,
         le=5_000_000,
         validation_alias="RADAR_MAX_FEED_BYTES",
+    )
+    pexels_api_key: str | None = Field(default=None, validation_alias="PEXELS_API_KEY")
+    image_search_provider: Literal["pexels", "demo"] = Field(
+        default="pexels",
+        validation_alias="IMAGE_SEARCH_PROVIDER",
+    )
+    image_search_timeout_seconds: float = Field(
+        default=5.0,
+        ge=0.1,
+        le=30.0,
+        validation_alias="IMAGE_SEARCH_TIMEOUT_SECONDS",
     )
 
     llm_provider: str | None = Field(default=None, validation_alias="LLM_PROVIDER")

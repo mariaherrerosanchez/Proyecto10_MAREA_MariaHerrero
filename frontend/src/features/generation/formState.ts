@@ -1,4 +1,4 @@
-import { platforms, type GenerationFormValues, type GenerationRequest, type GenerationResponse, type MultichannelGenerationRequest, type MultichannelGenerationResponse, type Platform } from '../../generation/types'
+import { platforms, type GenerationFormPrefill, type GenerationFormValues, type GenerationRequest, type GenerationResponse, type MultichannelGenerationRequest, type MultichannelGenerationResponse, type Platform } from '../../generation/types'
 import { replacePlatformGeneration } from './regenerationState'
 
 export type FormErrors = Partial<Record<'topic' | 'objective' | 'audience' | 'tone' | 'language' | 'platforms', string>>
@@ -23,6 +23,38 @@ export const initialFormValues: GenerationFormValues = {
   subniche: '',
   selectedPlatforms: [],
   activePlatform: null,
+}
+
+export function createInitialFormValues(
+  prefill: GenerationFormPrefill | undefined,
+  sessionDraft: GenerationFormValues,
+): GenerationFormValues {
+  const additionalContext = mergeAdditionalContext(
+    sessionDraft.additionalContext,
+    prefill?.additionalContext,
+  )
+
+  return {
+    ...sessionDraft,
+    ...prefill,
+    additionalContext,
+    niches: [...sessionDraft.niches],
+    selectedPlatforms: [...sessionDraft.selectedPlatforms],
+  }
+}
+
+function mergeAdditionalContext(currentContext: string, inspirationContext: string | undefined): string {
+  const normalizedInspiration = inspirationContext?.trim()
+  if (!normalizedInspiration) {
+    return currentContext
+  }
+
+  const normalizedCurrent = currentContext.trim()
+  if (!normalizedCurrent || normalizedCurrent.includes(normalizedInspiration)) {
+    return normalizedCurrent || normalizedInspiration
+  }
+
+  return `${normalizedCurrent}\n\n${normalizedInspiration}`
 }
 
 export const initialGenerationState: GenerationState = {

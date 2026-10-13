@@ -4,6 +4,7 @@ import type { GenerationFormValues, GenerationResponse, MultichannelGenerationRe
 import {
   generationReducer,
   addNiche,
+  createInitialFormValues,
   initialFormValues,
   initialGenerationState,
   serializeGenerationRequest,
@@ -59,6 +60,57 @@ describe('generation form state', () => {
       topic: expect.any(String), objective: expect.any(String), audience: expect.any(String), tone: expect.any(String), platforms: expect.any(String),
     })
     expect(validateGenerationForm(validValues())).toEqual({})
+  })
+
+  it('restores the complete session draft when Crear is mounted again after navigating through Radar', () => {
+    const sessionDraft = {
+      ...validValues(),
+      modelSelection: 'tertiary' as const,
+      additionalContext: 'Explica los límites.',
+      niches: ['Inteligencia Artificial', 'QA / Testing'],
+      subniche: 'Evaluación de sistemas de IA',
+    }
+    const initialValues = createInitialFormValues(undefined, sessionDraft)
+    initialValues.niches.push('Cambio local')
+    initialValues.selectedPlatforms.pop()
+    const restoredValues = createInitialFormValues(undefined, sessionDraft)
+
+    expect(restoredValues).toMatchObject(sessionDraft)
+    expect(restoredValues.niches).toEqual(['Inteligencia Artificial', 'QA / Testing'])
+    expect(restoredValues.selectedPlatforms).toEqual(['linkedin', 'blog'])
+  })
+
+  it('applies RSS inspiration without losing the existing draft or duplicating its reference', () => {
+    const sessionDraft = {
+      ...validValues(),
+      additionalContext: 'Mantén el enfoque práctico.',
+      niches: ['Tecnología'],
+      subniche: 'IA responsable',
+    }
+    const inspiration = {
+      topic: 'Una noticia RSS sobre IA',
+      additionalContext: 'Fuente: RSS\nEnlace original: https://example.test/noticia',
+    }
+
+    const withInspiration = createInitialFormValues(inspiration, sessionDraft)
+    const selectedAgain = createInitialFormValues(inspiration, withInspiration)
+
+    expect(withInspiration).toMatchObject({
+      topic: inspiration.topic,
+      objective: sessionDraft.objective,
+      audience: sessionDraft.audience,
+      tone: sessionDraft.tone,
+      language: sessionDraft.language,
+      modelSelection: sessionDraft.modelSelection,
+      niches: ['Tecnología'],
+      subniche: 'IA responsable',
+      selectedPlatforms: sessionDraft.selectedPlatforms,
+      activePlatform: sessionDraft.activePlatform,
+    })
+    expect(withInspiration.additionalContext).toBe(
+      'Mantén el enfoque práctico.\n\nFuente: RSS\nEnlace original: https://example.test/noticia',
+    )
+    expect(selectedAgain.additionalContext).toBe(withInspiration.additionalContext)
   })
 
   it('serializes optional fields only when they contain meaningful values', () => {

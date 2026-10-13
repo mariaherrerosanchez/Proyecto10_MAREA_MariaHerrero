@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { ApiConnectionError, createApiClient, GenerationRequestError } from './api'
+import {
+  ApiConnectionError,
+  createApiClient,
+  GenerationRequestError,
+  ImageSearchRequestError,
+  RadarRequestError,
+  TranslationRequestError,
+} from './api'
 
 describe('MAREA API client', () => {
   it('consults the backend health endpoint and returns its response', async () => {
@@ -56,6 +63,130 @@ describe('MAREA API client', () => {
     ]), { status: 200 }))
 
     await expect(createApiClient().getGenerationModels(fetcher)).rejects.toBeInstanceOf(ApiConnectionError)
+  })
+
+  it('retrieves validated Radar RSS metadata without treating it as generated content', async () => {
+    const radarResponse = {
+      items: [{
+        title: 'Titular RSS',
+        source_id: 'elpais-tecnologia',
+        source_name: 'EL PAÍS · Tecnología',
+        source_kind: 'verified_feed',
+        published_at: '2026-10-10T08:00:00Z',
+        original_url: 'https://elpais.com/tecnologia/example.html',
+        fetched_at: '2026-10-10T09:00:00Z',
+      }],
+      sources: [{
+        source_id: 'elpais-tecnologia',
+        source_name: 'EL PAÍS · Tecnología',
+        source_kind: 'verified_feed',
+        status: 'success',
+        fetched_at: '2026-10-10T09:00:00Z',
+        error_code: null,
+      }],
+      fetched_at: '2026-10-10T09:00:00Z',
+    }
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(radarResponse), { status: 200 }))
+
+    await expect(createApiClient('http://localhost:8000').getRadarNews([], fetcher)).resolves.toEqual(radarResponse)
+    expect(fetcher).toHaveBeenCalledWith('http://localhost:8000/radar/news')
+  })
+
+  it('sends repeated topics only when an explicit Radar interest search is requested', async () => {
+    const radarResponse = { items: [], sources: [], fetched_at: '2026-10-10T09:00:00Z' }
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(radarResponse), { status: 200 }))
+
+    await createApiClient('http://localhost:8000').getRadarNews(['IA responsable', 'QA'], fetcher)
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'http://localhost:8000/radar/news?topics=IA+responsable&topics=QA',
+    )
+  })
+
+  it('keeps Radar errors recoverable when its response is malformed or unavailable', async () => {
+    const malformedFetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), { status: 200 }))
+    const unavailableFetcher = vi.fn().mockResolvedValue(new Response(null, { status: 503 }))
+    const invalidJsonFetcher = vi.fn().mockResolvedValue(new Response('{', { status: 200 }))
+    const unsafeUrlFetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [{
+        title: 'Unsafe', source_id: 'elpais-tecnologia', source_name: 'EL PAÍS · Tecnología', source_kind: 'verified_feed',
+        published_at: null, original_url: 'javascript:alert(1)', fetched_at: '2026-10-10T09:00:00Z',
+      }],
+      sources: [],
+      fetched_at: '2026-10-10T09:00:00Z',
+    }), { status: 200 }))
+
+    await expect(createApiClient().getRadarNews([], malformedFetcher)).rejects.toBeInstanceOf(RadarRequestError)
+    await expect(createApiClient().getRadarNews([], unavailableFetcher)).rejects.toBeInstanceOf(RadarRequestError)
+    await expect(createApiClient().getRadarNews([], invalidJsonFetcher)).rejects.toBeInstanceOf(RadarRequestError)
+    await expect(createApiClient().getRadarNews([], unsafeUrlFetcher)).rejects.toBeInstanceOf(RadarRequestError)
+  })
+
+  it('searches stock images only through the backend and validates public Pexels metadata', async () => {
+    const response = {
+      provider: 'pexels',
+      items: [{
+        identifier: '42',
+        thumbnail_url: 'https://images.pexels.com/photos/42/thumbnail.jpeg',
+        display_url: 'https://images.pexels.com/photos/42/display.jpeg',
+        author_name: 'Ada Fotógrafa',
+        original_url: 'https://www.pexels.com/photo/42/',
+        provider: 'pexels',
+      }],
+    }
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(response), { status: 200 }))
+
+    await expect(createApiClient('http://localhost:8000').searchStockImages('costa mediterránea', fetcher))
+      .resolves.toEqual(response)
+    expect(fetcher).toHaveBeenCalledWith(
+      'http://localhost:8000/images/search?query=costa+mediterr%C3%A1nea',
+    )
+  })
+
+  it('accepts explicitly labelled demo image results without accepting unknown providers', async () => {
+    const response = {
+      provider: 'demo',
+      items: [{
+        identifier: 'demo-42',
+        thumbnail_url: 'https://images.pexels.com/photos/42/thumbnail.jpeg',
+        display_url: 'https://images.pexels.com/photos/42/display.jpeg',
+        author_name: 'Ada Fotógrafa',
+        original_url: 'https://www.pexels.com/photo/42/',
+        provider: 'demo',
+      }],
+    }
+    const demoFetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(response), { status: 200 }))
+    const unknownFetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ...response, provider: 'unknown' }), { status: 200 }))
+
+    await expect(createApiClient().searchStockImages('costa', demoFetcher)).resolves.toEqual(response)
+    await expect(createApiClient().searchStockImages('costa', unknownFetcher))
+      .rejects.toBeInstanceOf(ImageSearchRequestError)
+  })
+
+  it('keeps stock image search failures recoverable without exposing a backend error', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      detail: 'private upstream response',
+    }), { status: 502 }))
+
+    await expect(createApiClient().searchStockImages('costa', fetcher))
+      .rejects.toBeInstanceOf(ImageSearchRequestError)
+    await expect(createApiClient().searchStockImages('   ', fetcher))
+      .rejects.toThrow('Introduce una consulta para buscar imágenes.')
+  })
+
+  it('translates only the supplied draft and rejects malformed or unsuccessful responses safely', async () => {
+    const request = { text: 'Hola #MAREA', target_language: 'en' as const, model_selection: 'secondary' as const }
+    const translation = {
+      text: 'Hello #MAREA', target_language: 'en', provider: 'groq', model: 'configured-model', processing_location: 'external',
+    }
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(translation), { status: 200 }))
+    const failedFetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: 'private failure' }), { status: 502 }))
+
+    await expect(createApiClient('http://localhost:8000').translateContent(request, fetcher)).resolves.toEqual(translation)
+    expect(fetcher).toHaveBeenCalledWith('http://localhost:8000/translation', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(request),
+    })
+    await expect(createApiClient().translateContent(request, failedFetcher)).rejects.toBeInstanceOf(TranslationRequestError)
   })
 
   it('sends a structured generation request and returns the normalized response', async () => {

@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from app.generation.errors import GenerationUnavailableError
 from app.llm.factory import ProviderConfigurationError, ProviderNotImplementedError
 from app.llm.provider import ProviderInvocationError
+from app.translation.service import TranslationUnavailableError
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,21 @@ def register_exception_handlers(application: FastAPI) -> None:
             status_code=500,
             code="generation_unavailable",
             detail="La generación no está disponible en este momento.",
+        )
+
+    @application.exception_handler(TranslationUnavailableError)
+    async def translation_unavailable_error_handler(
+        _: Request,
+        error: TranslationUnavailableError,
+    ) -> JSONResponse:
+        logger.error(
+            "Translation provider invocation could not complete",
+            extra={"error_type": type(error).__name__},
+        )
+        return _error_response(
+            status_code=502,
+            code="translation_request_failed",
+            detail="No se ha podido traducir el borrador en este momento. Inténtalo de nuevo.",
         )
 
 

@@ -1,13 +1,19 @@
 import { useEffect, type FormEvent } from 'react'
 
-import type { AvailableGenerationModel, ModelSelection } from '../../generation/types'
+import type { AvailableGenerationModel, GenerationFormPrefill, ModelSelection } from '../../generation/types'
 import { languageOptions, objectiveOptions, toneOptions } from './constants'
 import { GenerationFeedback } from './GenerationFeedback'
 import { NicheFields } from './NicheFields'
 import { PlatformSelector } from './PlatformSelector'
 import { useGenerationForm } from './useGenerationForm'
+import { useGenerationDraft } from './GenerationDraftContext'
 
-export function GenerationForm() {
+type GenerationFormProps = {
+  prefill?: GenerationFormPrefill
+}
+
+export function GenerationForm({ prefill }: GenerationFormProps) {
+  const { draft, setDraft } = useGenerationDraft()
   const {
     values,
     errors,
@@ -26,15 +32,24 @@ export function GenerationForm() {
     regenerations,
     regenerationInProgress,
     regeneratePlatform,
+    translations,
+    translationErrors,
+    translationInProgress,
+    translateDraft,
+    confirmTranslationReview,
     generationModels,
     generationModelsError,
     loadGenerationModels,
     submit,
-  } = useGenerationForm()
+  } = useGenerationForm(prefill, draft)
 
   useEffect(() => {
     void loadGenerationModels()
   }, [loadGenerationModels])
+
+  useEffect(() => {
+    setDraft(values)
+  }, [setDraft, values])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -134,6 +149,11 @@ export function GenerationForm() {
         onDraftChange={updateDraft}
         onRegenerate={regeneratePlatform}
         regenerations={regenerations}
+        translations={translations}
+        translationErrors={translationErrors}
+        translationInProgress={translationInProgress}
+        onTranslate={translateDraft}
+        onConfirmTranslationReview={confirmTranslationReview}
       />
     </form>
   )

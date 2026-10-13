@@ -2,9 +2,11 @@ import { useCallback, useReducer, useRef, useState } from 'react'
 
 import type {
   AvailableGenerationModel,
+  GenerationFormPrefill,
   GenerationFormValues,
   MultichannelGenerationRequest,
   Platform,
+  TranslationLanguage,
 } from '../../generation/types'
 import { createApiClient } from '../../services/api'
 import {
@@ -20,7 +22,7 @@ import {
 import {
   generationReducer,
   addNiche,
-  initialFormValues,
+  createInitialFormValues,
   initialGenerationState,
   serializeMultichannelGenerationRequest,
   selectAllPlatforms,
@@ -38,11 +40,20 @@ import {
   startPlatformRegeneration,
   type PlatformRegenerationState,
 } from './regenerationState'
+import {
+  clearTranslation,
+  markTranslationReviewed,
+  saveTranslation,
+  type TranslationState,
+} from './translationState'
 
 const fallbackError = 'No se ha podido generar el borrador. Inténtalo de nuevo.'
 
-export function useGenerationForm() {
-  const [values, setValues] = useState<GenerationFormValues>(initialFormValues)
+export function useGenerationForm(
+  prefill: GenerationFormPrefill | undefined,
+  sessionDraft: GenerationFormValues,
+) {
+  const [values, setValues] = useState<GenerationFormValues>(() => createInitialFormValues(prefill, sessionDraft))
   const [errors, setErrors] = useState<FormErrors>({})
   const [generation, dispatch] = useReducer(generationReducer, initialGenerationState)
   const [draftReviews, setDraftReviews] = useState<DraftReviewState>({})
@@ -50,7 +61,11 @@ export function useGenerationForm() {
   const [regenerations, setRegenerations] = useState<PlatformRegenerationState>({})
   const [generationModels, setGenerationModels] = useState<AvailableGenerationModel[]>([])
   const [generationModelsError, setGenerationModelsError] = useState<string | null>(null)
+  const [translations, setTranslations] = useState<TranslationState>({})
+  const [translationErrors, setTranslationErrors] = useState<Partial<Record<Platform, string>>>({})
+  const [translationInProgress, setTranslationInProgress] = useState(false)
   const regeneratingPlatforms = useRef(new Set<Platform>())
+  const translating = useRef(false)
 
   function updateField<Field extends Exclude<keyof GenerationFormValues, 'niches' | 'selectedPlatforms' | 'activePlatform'>>(
     field: Field,
@@ -102,14 +117,59 @@ export function useGenerationForm() {
 
   function beginEditingDraft(platform: Platform) {
     setDraftReviews((current) => beginDraftEdit(current, platform))
+    invalidateTranslation(platform)
   }
 
   function updateDraft(platform: Platform, text: string) {
     setDraftReviews((current) => updateDraftText(current, platform, text))
+    invalidateTranslation(platform)
   }
 
   function confirmDraftReview(platform: Platform) {
     setDraftReviews((current) => markDraftReviewed(current, platform))
+  }
+
+  function invalidateTranslation(platform: Platform) {
+    setTranslations((current) => clearTranslation(current, platform))
+    setTranslationErrors((current) => {
+      const next = { ...current }
+      delete next[platform]
+      return next
+    })
+  }
+
+  function confirmTranslationReview(platform: Platform) {
+    setTranslations((current) => markTranslationReviewed(current, platform))
+  }
+
+  async function translateDraft(platform: Platform, text: string, targetLanguage: TranslationLanguage) {
+    if (originalRequest === null || translating.current || hasRegenerationInProgress(regenerations)) {
+      return
+    }
+
+    translating.current = true
+    setTranslationInProgress(true)
+    setTranslationErrors((current) => {
+      const next = { ...current }
+      delete next[platform]
+      return next
+    })
+    try {
+      const translation = await createApiClient().translateContent({
+        text,
+        target_language: targetLanguage,
+        model_selection: originalRequest.model_selection,
+      })
+      setTranslations((current) => saveTranslation(current, platform, translation))
+    } catch (error) {
+      setTranslationErrors((current) => ({
+        ...current,
+        [platform]: error instanceof Error ? error.message : fallbackError,
+      }))
+    } finally {
+      translating.current = false
+      setTranslationInProgress(false)
+    }
   }
 
   async function regeneratePlatform(platform: Platform) {
@@ -128,6 +188,7 @@ export function useGenerationForm() {
     }
 
     regeneratingPlatforms.current.add(platform)
+    invalidateTranslation(platform)
     setRegenerations((current) => startPlatformRegeneration(current, platform))
     try {
       const regenerated = await createApiClient().generateContent(
@@ -166,6 +227,8 @@ export function useGenerationForm() {
 
     setDraftReviews({})
     setRegenerations({})
+    setTranslations({})
+    setTranslationErrors({})
     dispatch({ type: 'start' })
     try {
       const request = serializeMultichannelGenerationRequest(values)
@@ -202,6 +265,11 @@ export function useGenerationForm() {
     loadGenerationModels,
     regenerationInProgress: hasRegenerationInProgress(regenerations),
     regeneratePlatform,
+    translations,
+    translationErrors,
+    translationInProgress,
+    translateDraft,
+    confirmTranslationReview,
     submit,
   }
 }

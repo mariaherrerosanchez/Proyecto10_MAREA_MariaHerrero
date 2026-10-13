@@ -15,6 +15,7 @@ from app.llm.factory import (
     create_llm_provider,
 )
 from app.llm.types import ModelSelection
+from app.llm.provider import LLMProvider
 from app.prompts.builder import PromptBuilder
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,12 @@ class GenerationServiceFactory:
         self._settings = settings
 
     def create(self, selection: ModelSelection) -> GenerationService:
-        return GenerationService(create_llm_provider(self._settings, selection), PromptBuilder())
+        return GenerationService(self.create_provider(selection), PromptBuilder())
+
+    def create_provider(self, selection: ModelSelection) -> LLMProvider:
+        """Reuse the configured provider for flows other than generation."""
+
+        return create_llm_provider(self._settings, selection)
 
     def available_models(self) -> tuple[ResolvedProviderConfiguration, ...]:
         return available_model_configurations(self._settings)
