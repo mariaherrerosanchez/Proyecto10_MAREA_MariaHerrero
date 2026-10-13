@@ -14,6 +14,7 @@ OPTIONAL_CONFIGURATION_ENV_VARS = (
     "OPENROUTER_MODEL",
     "OLLAMA_MODEL",
     "LANGSMITH_API_KEY",
+    "PEXELS_API_KEY",
 )
 
 
@@ -43,6 +44,9 @@ def test_settings_read_environment_configuration(monkeypatch) -> None:
     monkeypatch.setenv("LANGSMITH_API_KEY", "langsmith-test-key")
     monkeypatch.setenv("LANGSMITH_PROJECT", "marea-test")
     monkeypatch.setenv("LANGSMITH_ENDPOINT", "https://langsmith.test")
+    monkeypatch.setenv("PEXELS_API_KEY", "pexels-test-key")
+    monkeypatch.setenv("IMAGE_SEARCH_PROVIDER", "demo")
+    monkeypatch.setenv("IMAGE_SEARCH_TIMEOUT_SECONDS", "4")
 
     settings = Settings(_env_file=None)
 
@@ -68,6 +72,9 @@ def test_settings_read_environment_configuration(monkeypatch) -> None:
     assert settings.langsmith_api_key == "langsmith-test-key"
     assert settings.langsmith_project == "marea-test"
     assert settings.langsmith_endpoint == "https://langsmith.test"
+    assert settings.pexels_api_key == "pexels-test-key"
+    assert settings.image_search_provider == "demo"
+    assert settings.image_search_timeout_seconds == 4
 
 
 def test_settings_allow_missing_optional_credentials(monkeypatch) -> None:
@@ -92,6 +99,9 @@ def test_settings_allow_missing_optional_credentials(monkeypatch) -> None:
     assert settings.langsmith_api_key is None
     assert settings.langsmith_project == "MAREA"
     assert settings.langsmith_endpoint == "https://api.smith.langchain.com"
+    assert settings.pexels_api_key is None
+    assert settings.image_search_provider == "pexels"
+    assert settings.image_search_timeout_seconds == 5.0
 
 
 def test_environment_values_override_dotenv_values(tmp_path: Path, monkeypatch) -> None:
