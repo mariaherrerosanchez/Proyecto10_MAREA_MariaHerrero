@@ -4,6 +4,8 @@ import type {
   GenerationResponse,
   MultichannelGenerationRequest,
   MultichannelGenerationResponse,
+  TranslationRequest,
+  TranslationResponse,
 } from '../generation/types'
 import type { RadarNewsResponse } from '../radar/types'
 import type { StockImageSearchResponse } from '../images/types'
@@ -81,6 +83,13 @@ export class ImageSearchRequestError extends Error {
   }
 }
 
+export class TranslationRequestError extends Error {
+  constructor() {
+    super('No se ha podido traducir el borrador. Inténtalo de nuevo.')
+    this.name = 'TranslationRequestError'
+  }
+}
+
 function isSafeMultichannelError(value: unknown): value is SafeMultichannelError {
   if (typeof value !== 'object' || value === null) {
     return false
@@ -155,6 +164,18 @@ function isStockImageSearchResponse(value: unknown): value is StockImageSearchRe
   return (provider === 'pexels' || provider === 'demo')
     && Array.isArray(items)
     && items.every((item) => isStockImage(item))
+}
+
+function isTranslationResponse(value: unknown): value is TranslationResponse {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  const response = value as Record<string, unknown>
+  return typeof response.text === 'string'
+    && (response.target_language === 'en' || response.target_language === 'fr' || response.target_language === 'it')
+    && typeof response.provider === 'string'
+    && typeof response.model === 'string'
+    && (response.processing_location === 'local' || response.processing_location === 'external')
 }
 
 function isStockImage(value: unknown): boolean {
@@ -295,6 +316,35 @@ export function createApiClient(apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?
         throw new ImageSearchRequestError()
       }
       return body
+    },
+    async translateContent(request: TranslationRequest, fetcher: Fetcher = fetch): Promise<TranslationResponse> {
+      let response: Response
+      try {
+        response = await fetcher(`${baseUrl}/translation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(request),
+        })
+      } catch {
+        throw new TranslationRequestError()
+      }
+
+      if (!response.ok) {
+        throw new TranslationRequestError()
+      }
+
+      try {
+        const body: unknown = await response.json()
+        if (!isTranslationResponse(body)) {
+          throw new TranslationRequestError()
+        }
+        return body
+      } catch (error) {
+        if (error instanceof TranslationRequestError) {
+          throw error
+        }
+        throw new TranslationRequestError()
+      }
     },
     async generateMultichannelContent(
       request: MultichannelGenerationRequest,

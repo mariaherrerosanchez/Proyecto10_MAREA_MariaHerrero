@@ -1650,6 +1650,51 @@ h3 {
   text-decoration: underline;
 }
 
+.translation-panel {
+  border-top: 1px solid rgb(77 141 133 / 28%);
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+}
+
+.translation-panel h3,
+.translation-panel p {
+  margin-top: 0;
+}
+
+.translation-panel > div > p:last-child {
+  color: var(--color-muted);
+  font-size: 0.88rem;
+  margin-bottom: 0;
+}
+
+.translation-panel__result {
+  background: rgb(77 141 133 / 8%);
+  border-left: 3px solid var(--color-sea);
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.translation-panel__metadata {
+  color: var(--color-muted);
+  display: flex;
+  font-size: 0.8rem;
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.translation-panel__metadata div {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.translation-panel__metadata dt,
+.translation-panel__metadata dd {
+  margin: 0;
+}
+
 .generation-feedback .generation-draft__action {
   margin-top: var(--space-3);
 }

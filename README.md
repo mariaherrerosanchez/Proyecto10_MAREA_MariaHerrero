@@ -133,6 +133,8 @@ docker compose up -d --force-recreate backend
 
 El modo demo no consulta Pexels ni realiza una búsqueda real: devuelve un catálogo estático de ejemplos con autoría y enlace original visibles. Sirve exclusivamente para comprobar el flujo de selección por plataforma; antes de utilizar una fotografía fuera de la demo, revisa su página original y las condiciones de uso aplicables.
 
+Tras confirmar la revisión humana de un borrador, MAREA permite crear una traducción temporal a inglés, francés o italiano. La traducción parte exclusivamente del texto existente y conserva el original; requiere su propia revisión antes de poder copiarse. No se almacena, no se publica y no sustituye al borrador original.
+
 Por defecto, el frontend se compila para usar `http://localhost:8001`. Si necesitas otra URL pública de API, define `VITE_API_BASE_URL` antes de construir; el cambio exige reconstruir el frontend.
 
 ### Construcción y arranque

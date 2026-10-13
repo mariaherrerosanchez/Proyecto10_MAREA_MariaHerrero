@@ -6,6 +6,7 @@ import {
   GenerationRequestError,
   ImageSearchRequestError,
   RadarRequestError,
+  TranslationRequestError,
 } from './api'
 
 describe('MAREA API client', () => {
@@ -171,6 +172,21 @@ describe('MAREA API client', () => {
       .rejects.toBeInstanceOf(ImageSearchRequestError)
     await expect(createApiClient().searchStockImages('   ', fetcher))
       .rejects.toThrow('Introduce una consulta para buscar imágenes.')
+  })
+
+  it('translates only the supplied draft and rejects malformed or unsuccessful responses safely', async () => {
+    const request = { text: 'Hola #MAREA', target_language: 'en' as const, model_selection: 'secondary' as const }
+    const translation = {
+      text: 'Hello #MAREA', target_language: 'en', provider: 'groq', model: 'configured-model', processing_location: 'external',
+    }
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(translation), { status: 200 }))
+    const failedFetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: 'private failure' }), { status: 502 }))
+
+    await expect(createApiClient('http://localhost:8000').translateContent(request, fetcher)).resolves.toEqual(translation)
+    expect(fetcher).toHaveBeenCalledWith('http://localhost:8000/translation', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(request),
+    })
+    await expect(createApiClient().translateContent(request, failedFetcher)).rejects.toBeInstanceOf(TranslationRequestError)
   })
 
   it('sends a structured generation request and returns the normalized response', async () => {

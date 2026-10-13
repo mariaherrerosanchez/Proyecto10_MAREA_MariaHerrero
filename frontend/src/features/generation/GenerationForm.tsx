@@ -32,6 +32,11 @@ export function GenerationForm({ prefill }: GenerationFormProps) {
     regenerations,
     regenerationInProgress,
     regeneratePlatform,
+    translations,
+    translationErrors,
+    translationInProgress,
+    translateDraft,
+    confirmTranslationReview,
     generationModels,
     generationModelsError,
     loadGenerationModels,
@@ -144,6 +149,11 @@ export function GenerationForm({ prefill }: GenerationFormProps) {
         onDraftChange={updateDraft}
         onRegenerate={regeneratePlatform}
         regenerations={regenerations}
+        translations={translations}
+        translationErrors={translationErrors}
+        translationInProgress={translationInProgress}
+        onTranslate={translateDraft}
+        onConfirmTranslationReview={confirmTranslationReview}
       />
     </form>
   )
