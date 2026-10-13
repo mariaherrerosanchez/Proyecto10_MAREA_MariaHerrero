@@ -54,6 +54,11 @@ describe('GenerationFeedback', () => {
         onDraftChange={() => undefined}
         onRegenerate={() => undefined}
         regenerations={{}}
+        translations={{}}
+        translationErrors={{}}
+        translationInProgress={false}
+        onTranslate={async () => undefined}
+        onConfirmTranslationReview={() => undefined}
       />,
     )
 
@@ -116,6 +121,11 @@ describe('GenerationFeedback', () => {
       onDraftChange: () => undefined,
       onRegenerate: () => undefined,
       regenerations: {},
+      translations: {},
+      translationErrors: {},
+      translationInProgress: false,
+      onTranslate: async () => undefined,
+      onConfirmTranslationReview: () => undefined,
     }
 
     expect(renderToStaticMarkup(<GenerationFeedback {...commonProps} draftReviews={{}} />))
@@ -130,6 +140,14 @@ describe('GenerationFeedback', () => {
         }}
       />,
     )).toContain('Busca una fotografía')
+    expect(renderToStaticMarkup(
+      <GenerationFeedback
+        {...commonProps}
+        draftReviews={{
+          linkedin: { originalText: 'Borrador revisado.', text: 'Borrador revisado.', reviewed: true },
+        }}
+      />,
+    )).toContain('Traduce este borrador')
     expect(renderToStaticMarkup(
       <GenerationFeedback
         {...commonProps}

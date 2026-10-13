@@ -5,6 +5,7 @@ import type {
   GuardrailAssessment,
   Platform,
   SuccessfulPlatformGeneration,
+  TranslationLanguage,
 } from '../../generation/types'
 import type { GenerationState } from './formState'
 import type { DraftReviewState, ReviewedDraft } from './draftReviewState'
@@ -25,6 +26,7 @@ import {
   type UploadedImage,
 } from './stockImageState'
 import type { StockImage } from '../../images/types'
+import type { DraftTranslation, TranslationState } from './translationState'
 
 type DraftPresentationResponse = Omit<SuccessfulPlatformGeneration['generation'], 'guardrails' | 'processing_location'> & {
   guardrails?: GuardrailAssessment | null
@@ -50,6 +52,11 @@ type GenerationFeedbackProps = {
   onDraftChange: (platform: Platform, text: string) => void
   onRegenerate: (platform: Platform) => void
   regenerations: PlatformRegenerationState
+  translations: TranslationState
+  translationErrors: Partial<Record<Platform, string>>
+  translationInProgress: boolean
+  onTranslate: (platform: Platform, text: string, targetLanguage: TranslationLanguage) => Promise<void>
+  onConfirmTranslationReview: (platform: Platform) => void
 }
 
 type DraftOutputFeedback = {
@@ -66,6 +73,11 @@ export function GenerationFeedback({
   onDraftChange,
   onRegenerate,
   regenerations,
+  translations,
+  translationErrors,
+  translationInProgress,
+  onTranslate,
+  onConfirmTranslationReview,
 }: GenerationFeedbackProps) {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(initialPlatform)
   const [outputFeedback, setOutputFeedback] = useState<Partial<Record<Platform, DraftOutputFeedback>>>({})
@@ -247,6 +259,11 @@ export function GenerationFeedback({
               platform={activeResult.platform}
               regeneration={regenerations[activeResult.platform]}
               selectedImage={selectedImages[activeResult.platform]}
+              translation={translations[activeResult.platform]}
+              translationError={translationErrors[activeResult.platform]}
+              translationInProgress={translationInProgress}
+              onTranslate={onTranslate}
+              onConfirmTranslationReview={onConfirmTranslationReview}
             />
           : <GenerationFailure
               error={activeResult}
@@ -280,6 +297,11 @@ type GeneratedDraftProps = {
   platform: Platform
   regeneration: PlatformRegenerationState[Platform]
   selectedImage: SelectedContentImage | undefined
+  translation: DraftTranslation | undefined
+  translationError: string | undefined
+  translationInProgress: boolean
+  onTranslate: (platform: Platform, text: string, targetLanguage: TranslationLanguage) => Promise<void>
+  onConfirmTranslationReview: (platform: Platform) => void
 }
 
 function GeneratedDraft({
@@ -300,6 +322,11 @@ function GeneratedDraft({
   platform,
   regeneration,
   selectedImage,
+  translation,
+  translationError,
+  translationInProgress,
+  onTranslate,
+  onConfirmTranslationReview,
 }: GeneratedDraftProps) {
   const [isEditing, setIsEditing] = useState(false)
   const guardrailReviewMessage = reviewMessage(generation.guardrails)
@@ -362,6 +389,16 @@ function GeneratedDraft({
       {draft.reviewed ? <p className="generation-draft__reviewed" role="status">Esta pieza está revisada.</p> : null}
       {isRegenerating ? <p className="generation-draft__regeneration" role="status">MAREA está regenerando esta pieza…</p> : null}
       {regeneration?.status === 'error' ? <p className="generation-feedback generation-feedback--error" role="alert">{regeneration.error}</p> : null}
+      {draft.reviewed ? (
+        <TranslationPanel
+          disabled={isRegenerating}
+          error={translationError}
+          onConfirmReview={() => onConfirmTranslationReview(platform)}
+          onTranslate={(targetLanguage) => onTranslate(platform, draft.text, targetLanguage)}
+          translating={translationInProgress}
+          translation={translation}
+        />
+      ) : null}
       <div className="generation-draft__output" aria-describedby={`draft-output-help-${platform}`}>
         <p id={`draft-output-help-${platform}`}>
           {draft.reviewed
@@ -405,6 +442,103 @@ function GeneratedDraft({
         <div><dt>Procesamiento</dt><dd className="generation-draft__location">{processingLocationLabel(generation.processing_location)}</dd></div>
         <div><dt>Prompt</dt><dd>{generation.trace.prompt_version}</dd></div>
       </dl>
+    </section>
+  )
+}
+
+const translationLanguageLabels: Record<TranslationLanguage, string> = {
+  en: 'Inglés',
+  fr: 'Francés',
+  it: 'Italiano',
+}
+
+function TranslationPanel({
+  disabled,
+  error,
+  onConfirmReview,
+  onTranslate,
+  translating,
+  translation,
+}: {
+  disabled: boolean
+  error: string | undefined
+  onConfirmReview: () => void
+  onTranslate: (targetLanguage: TranslationLanguage) => Promise<void>
+  translating: boolean
+  translation: DraftTranslation | undefined
+}) {
+  const [targetLanguage, setTargetLanguage] = useState<TranslationLanguage>(translation?.language ?? 'en')
+  const [copyFeedback, setCopyFeedback] = useState<string | undefined>()
+
+  async function copyTranslation() {
+    if (translation === undefined) {
+      return
+    }
+    try {
+      await copyDraftText(translation.text)
+      setCopyFeedback('Traducción copiada al portapapeles.')
+    } catch {
+      setCopyFeedback('No se pudo copiar la traducción. Inténtalo de nuevo.')
+    }
+  }
+
+  return (
+    <section className="translation-panel" aria-labelledby="translation-heading">
+      <div>
+        <p className="eyebrow">Versión internacional</p>
+        <h3 id="translation-heading">Traduce este borrador</h3>
+        <p>La traducción se crea a partir del texto revisado; no genera una publicación nueva.</p>
+      </div>
+      <label className="form-field" htmlFor="translation-language">
+        <span>Idioma de destino</span>
+        <select
+          disabled={disabled || translating}
+          id="translation-language"
+          onChange={(event) => setTargetLanguage(event.target.value as TranslationLanguage)}
+          value={targetLanguage}
+        >
+          {Object.entries(translationLanguageLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </label>
+      <button
+        className="generation-draft__action"
+        disabled={disabled || translating}
+        onClick={() => void onTranslate(targetLanguage)}
+        type="button"
+      >
+        {translating ? 'Traduciendo…' : 'Traducir'}
+      </button>
+      {error ? <p className="generation-feedback generation-feedback--error" role="alert">{error}</p> : null}
+      {translation ? (
+        <section className="translation-panel__result" aria-live="polite" aria-label={`Traducción al ${translationLanguageLabels[translation.language]}`}>
+          <p className="eyebrow">Traducción al {translationLanguageLabels[translation.language]}</p>
+          <DraftContent text={translation.text} />
+          <p className="generation-draft__notice">Revísala antes de utilizarla: la decisión editorial siempre es tuya.</p>
+          <div className="generation-draft__actions">
+            <button
+              className="generation-draft__action generation-draft__action--review"
+              disabled={translation.reviewed}
+              onClick={onConfirmReview}
+              type="button"
+            >
+              {translation.reviewed ? 'Revisión confirmada' : 'Confirmar revisión de la traducción'}
+            </button>
+            <button
+              className="generation-draft__action"
+              disabled={!translation.reviewed}
+              onClick={() => void copyTranslation()}
+              type="button"
+            >
+              Copiar traducción
+            </button>
+          </div>
+          {copyFeedback ? <p className="generation-draft__output-message" role="status">{copyFeedback}</p> : null}
+          <dl className="translation-panel__metadata">
+            <div><dt>Proveedor</dt><dd>{translation.provider}</dd></div>
+            <div><dt>Modelo</dt><dd>{translation.model}</dd></div>
+          </dl>
+        </section>
+      ) : null}
     </section>
   )
 }
